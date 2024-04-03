@@ -1,23 +1,20 @@
 name: birc-project
 channels:
+  - defaults
+  - bioconda
+  - gwforg
   - conda-forge
   - kaspermunch
-  - gwforg
-  - defaults
 dependencies:
-  - geneinfo
+  - git
+  - gwf
   - ipython
-  - ipywidgets
   - jupyterlab
-  - msprime
-  - nodejs
-  - pyslim
   - pytables
   - scipy
   - seaborn
-  - slurm-jupyter
   - statsmodels
+  - pyslim
   - tskit
-  - git
-  - gwf
-prefix: /Users/kmt/miniconda3/envs/birc-project
+  - msprime
+prefix: /home/davidec/miniconda3/envs/birc-project
