@@ -1,0 +1,299 @@
+// Meiotic drive simulation
+// We use Slim manual recipe 14.5 where we have distinct chromosomes based on mutation m3 with PAR regions
+// We model genomic elements with fixed mutation and recombination rates (Normal) alternated with elements with no mutations and a recombination rate of 0.5
+
+initialize()
+{
+	initializeSLiMModelType("nonWF");
+	initializeTreeSeq();
+	
+	defineConstant("Mut_rate", 1.5e-8);
+	defineConstant("Mut_rateAmp", 1.5e-4);
+	defineConstant("Rec_rate", 1e-8);
+	defineConstant("D_proportion", 0.8);
+	defineConstant("Chr_len", 9999);
+	defineConstant("Amplicon_len", 50);
+	defineConstant("Sex_Chr_len", integerDiv(Chr_len, 5) - Amplicon_len);
+	defineConstant("Sep_len", 2);
+	defineConstant("m3_pos", (Chr_len * 3) + (Sep_len * 2) + 2);
+	defineConstant("P_size", 100);
+	defineConstant("K", P_size);
+	
+	//Setting 1.5e-8 for all Normal and 0 for all Sep
+	// WHY ARE THE SPACER MUTATION RATES ZERO?
+	initializeMutationRate(c(0, Mut_rateAmp, Mut_rate, Mut_rateAmp, Mut_rate, Mut_rateAmp, Mut_rate, Mut_rateAmp, Mut_rate, Mut_rateAmp, Mut_rate),
+		c((Chr_len * 2) + (Sep_len * 2),
+		(Chr_len * 2) + (Sep_len * 2) + 1 + Amplicon_len,
+		(Chr_len * 2) + (Sep_len * 2) + 2 + Amplicon_len + (Sex_Chr_len),
+		(Chr_len * 2) + (Sep_len * 2) + 3 + (Amplicon_len * 2) + (Sex_Chr_len),
+		(Chr_len * 2) + (Sep_len * 2) + 4 + (Amplicon_len * 2) + (Sex_Chr_len * 2),
+		(Chr_len * 2) + (Sep_len * 2) + 5 + (Amplicon_len * 3) + (Sex_Chr_len * 2),
+		(Chr_len * 2) + (Sep_len * 2) + 6 + (Amplicon_len * 3) + (Sex_Chr_len * 3),
+		(Chr_len * 2) + (Sep_len * 2) + 7 + (Amplicon_len * 4) + (Sex_Chr_len * 3),
+		(Chr_len * 2) + (Sep_len * 2) + 8 + (Amplicon_len * 4) + (Sex_Chr_len * 4),
+		(Chr_len * 2) + (Sep_len * 2) + 9 + (Amplicon_len * 5) + (Sex_Chr_len * 4),
+		(Chr_len * 2) + (Sep_len * 2) + 10 +(Amplicon_len * 5) + (Sex_Chr_len * 5)));
+	
+	initializeMutationType("m1", 0.5, "f", 0.0); // PAR 
+	initializeMutationType("m2", 0.5, "f", 0.0); // non-PAR    
+	initializeMutationType("m3", 1.0, "f", 0.0); // Y marker	  
+	m3.color = "white";
+	initializeMutationType("m4", 1.0, "f", 0.0); //X driver
+	m4.color = "red";
+	m4.convertToSubstitution = F;
+	initializeMutationType("m5", 1.0, "f", 0.0); //Y driver
+	m5.color = "blue";
+	m5.convertToSubstitution = F;
+	initializeMutationType("m6", 1.0, "f", 0.0); //ampliconic gene  +
+	m6.color = "green";
+	initializeMutationType("m7", 1.0, "f", 0.0); //ampliconic gene  -
+	m7.color = "yellow";
+	
+	//	// 40 Kb chromosome
+	initializeGenomicElementType("g1", m1, 1); // PAR: m1  
+	initializeGenomicElementType("g2", c(m2, m4, m5), c(0, D_proportion, D_proportion)); // non-PAR: X or Y 
+	initializeGenomicElementType("g3", c(m6, m7), c(0.5, 0.5)); //ampliconic region 
+	initializeGenomicElementType("g4", m1, 1); // Sep: No mutations
+	
+	initializeGenomicElement(g1, 0, Chr_len); 							 // Normal Auto
+	initializeGenomicElement(g4, Chr_len + 1, Chr_len + Sep_len); 	 // Sep AUTO
+	
+	initializeGenomicElement(g1,
+		Chr_len + Sep_len + 1,
+		(Chr_len * 2) + Sep_len + 1); 		 // Normal AUTO
+	initializeGenomicElement(g4,
+		(Chr_len * 2) + Sep_len + 2,
+		(Chr_len * 2) + (Sep_len * 2) + 1); // Sep IN BETWEEN
+	initializeGenomicElement(g3,
+		(Chr_len * 2) + (Sep_len * 2) + 2,
+		(Chr_len * 2) + (Sep_len * 2) + 1 + Amplicon_len);
+	//Amplicon 1
+	initializeGenomicElement(g2,
+		(Chr_len * 2) + (Sep_len * 2) + 2 + Amplicon_len,
+		(Chr_len * 2) + (Sep_len * 2) + 2 + Amplicon_len + (Sex_Chr_len));                                                           													// Normal SEX X/Y
+	initializeGenomicElement(g3,
+		(Chr_len * 2) + (Sep_len * 2) + 3 + Amplicon_len + (Sex_Chr_len),
+		(Chr_len * 2) + (Sep_len * 2) + 3 + (Amplicon_len * 2) + (Sex_Chr_len));
+	//Amplicon 2
+	initializeGenomicElement(g2,
+		(Chr_len * 2) + (Sep_len * 2) + 4 + (Amplicon_len * 2) + (Sex_Chr_len),
+		(Chr_len * 2) + (Sep_len * 2) + 4 + (Amplicon_len * 2) + (Sex_Chr_len * 2));                                                           													// Normal SEX X/Y
+	initializeGenomicElement(g3,
+		(Chr_len * 2) + (Sep_len * 2) + 5 + (Amplicon_len * 2) + (Sex_Chr_len * 2),
+		(Chr_len * 2) + (Sep_len * 2) + 5 + (Amplicon_len * 3) + (Sex_Chr_len * 2));
+	//Amplicon 3
+	initializeGenomicElement(g2,
+		(Chr_len * 2) + (Sep_len * 2) + 6 + (Amplicon_len * 3) + (Sex_Chr_len * 2),
+		(Chr_len * 2) + (Sep_len * 2) + 6 + (Amplicon_len * 3) + (Sex_Chr_len * 3));                                                           													// Normal SEX X/Y			 
+	initializeGenomicElement(g3,
+		(Chr_len * 2) + (Sep_len * 2) + 7 + (Amplicon_len * 3) + (Sex_Chr_len * 3),
+		(Chr_len * 2) + (Sep_len * 2) + 7 + (Amplicon_len * 4) + (Sex_Chr_len * 3));
+	//Amplicon 4
+	initializeGenomicElement(g2,
+		(Chr_len * 2) + (Sep_len * 2) + 8 + (Amplicon_len * 4) + (Sex_Chr_len * 3),
+		(Chr_len * 2) + (Sep_len * 2) + 8 + (Amplicon_len * 4) + (Sex_Chr_len * 4));
+	//Normal SEX X/Y
+	initializeGenomicElement(g3,
+		(Chr_len * 2) + (Sep_len * 2) + 9 + (Amplicon_len * 4) + (Sex_Chr_len * 4),
+		(Chr_len * 2) + (Sep_len * 2) + 9 + (Amplicon_len * 5) + (Sex_Chr_len * 4));
+	//Amplicon 5						 
+	initializeGenomicElement(g2,
+		(Chr_len * 2) + (Sep_len * 2) + 10 + (Amplicon_len * 5) + (Sex_Chr_len * 4),
+		(Chr_len * 2) + (Sep_len * 2) + 10 + (Amplicon_len * 5) + (Sex_Chr_len * 5));
+	//Normal SEX X/Y
+	
+	// turn on sex and model as an autosome
+	initializeSex("A");
+	
+	// no recombination in males outside PAR
+	initializeRecombinationRate(c(Rec_rate, 0.5, Rec_rate, 0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0.5, 0),
+		c(Chr_len, Chr_len + Sep_len,
+		(Chr_len * 2) + Sep_len + 1,
+		(Chr_len * 2) + (Sep_len * 2) + 1 + Amplicon_len,
+		(Chr_len * 2) + (Sep_len * 2) + 2 + Amplicon_len + (Sex_Chr_len),
+		(Chr_len * 2) + (Sep_len * 2) + 3 + (Amplicon_len * 2) + (Sex_Chr_len),
+		(Chr_len * 2) + (Sep_len * 2) + 4 + (Amplicon_len * 2) + (Sex_Chr_len * 2),
+		(Chr_len * 2) + (Sep_len * 2) + 5 + (Amplicon_len * 3) + (Sex_Chr_len * 2),
+		(Chr_len * 2) + (Sep_len * 2) + 6 + (Amplicon_len * 3) + (Sex_Chr_len * 3),
+		(Chr_len * 2) + (Sep_len * 2) + 7 + (Amplicon_len * 4) + (Sex_Chr_len * 3),
+		(Chr_len * 2) + (Sep_len * 2) + 8 + (Amplicon_len * 4) + (Sex_Chr_len * 4),
+		(Chr_len * 2) + (Sep_len * 2) + 9 + (Amplicon_len * 5) + (Sex_Chr_len * 4),
+		(Chr_len * 2) + (Sep_len * 2) + 10 + (Amplicon_len * 5) + (Sex_Chr_len * 5)), sex="M");
+	initializeRecombinationRate(c(Rec_rate, 0.5, Rec_rate, 0.5, Rec_rate, 0.5, Rec_rate, 0.5, Rec_rate, 0.5, Rec_rate, 0.5, Rec_rate),
+		c(Chr_len, Chr_len + Sep_len,
+		(Chr_len * 2) + Sep_len + 1,
+		(Chr_len * 2) + (Sep_len * 2) + 1,
+		(Chr_len * 2) + (Sep_len * 2) + 2 + Amplicon_len + (Sex_Chr_len),
+		(Chr_len * 2) + (Sep_len * 2) + 3 + (Amplicon_len * 2) + (Sex_Chr_len),
+		(Chr_len * 2) + (Sep_len * 2) + 4 + (Amplicon_len * 2) + (Sex_Chr_len * 2),
+		(Chr_len * 2) + (Sep_len * 2) + 5 + (Amplicon_len * 3) + (Sex_Chr_len * 2),
+		(Chr_len * 2) + (Sep_len * 2) + 6 + (Amplicon_len * 3) + (Sex_Chr_len * 3),
+		(Chr_len * 2) + (Sep_len * 2) + 7 + (Amplicon_len * 4) + (Sex_Chr_len * 3),
+		(Chr_len * 2) + (Sep_len * 2) + 8 + (Amplicon_len * 4) + (Sex_Chr_len * 4),
+		(Chr_len * 2) + (Sep_len * 2) + 9 + (Amplicon_len * 5) + (Sex_Chr_len * 4),
+		(Chr_len * 2) + (Sep_len * 2) + 10 + (Amplicon_len * 5) + (Sex_Chr_len * 5)), sex="F");
+}
+
+reproduction() { // <----------------- Kasper
+	female = sample(p1.individuals[p1.individuals.sex == "F"], 1);
+	male = sample(p1.individuals[p1.individuals.sex == "M"], 1);
+	p1.addCrossed(female, male);
+}
+
+1 early() {
+	// initialize the pop, with a Y marker for each male
+	sim.addSubpop("p1", P_size);
+	i = p1.individuals;
+	i[i.sex == "M"].genome2.addNewMutation(m3, 0.0, m3_pos);
+	//add log file <==== Davide
+	log = community.createLogFile("results/sim_log.txt", logInterval=10); 
+	log.addCycle();
+	log.addPopulationSexRatio();
+}
+
+early() { // <----------------- Kasper
+	p1.fitnessScaling = K / p1.individualCount;
+}
+
+//collects information on mutations with ID from min to max on individual Ind.
+//Return value is built with the modifyChild() callback in mind: it uses different survive functions to accept or refuse the proposed child.
+function (logical)collect_parent_stats(i min, i max, object<Individual> Ind){
+	count = rep(0, max - min + 1);
+	pos = 1:(max-min+1); //index vector
+	for (i in min:max) {
+		count[i - min] = sum(Ind.genomes.countOfMutationsOfType(i));
+	}
+	x_count = count[pos % 2 == 0]; //all even muts are in X 
+	y_count = count[pos % 2 != 0]; //with simple_survive is 1 - x_stats
+	
+	//make parameter for child if we want to use this function elsewhere.
+	if (child.sex == "F") { // female
+		return simple_survive(x_count, y_count, is_male = F);
+	} else { 					// male
+		return simple_survive(x_count, y_count, is_male = T);
+	}
+}
+
+function (logical)simple_survive(integer x_count, integer y_count, logical is_male){
+	//variables to increase efficency and readability // <================== Davide
+	x = sum(x_count); //number of mutations in X chromosome
+	y = sum(y_count); //number of mutations in Y chromosome
+	
+	if (x == 0 & y == 0) {
+		return T;
+	}
+	
+	//if fraction is 1 return true
+	if (x / y == 1) return T; // <================== Davide
+	
+	randf = runif(1, 0, 1);
+	
+	if (is_male == T) {
+		// child got Y from father
+		if (x == 0) {
+			return T; // with zero x_count non-zero y_count y always survive
+		}
+		if (y == 0) {
+			return 1 / x > randf; // with zero y_count we assume it is 1
+		}
+		return y / x > randf;
+	} else {
+		// child got X from father
+		if (y == 0) {
+			return T; // with zero y_count non-zero x_count x always survive
+		}
+		if (x == 0) {
+			return 1 / y > randf; // with zero x_count we assume it is 1
+		}
+		return x / y > randf;
+	}
+}
+
+//Function that counts the number of mutations on ampliconic regions (m6 and m7) with an opposite effect (duplication or shrinking) green (+) yellow (-) 
+function (i)total_amp_effect(o<Subpopulation> p){
+ 	return sum(p.genomes.countOfMutationsOfType(6) -p.genomes.countOfMutationsOfType(7));
+		}
+//p1.species.chromosome.genomicElements.genomicElementType
+//p1.genomes[0].positionsOfMutationsOfType(6)
+//p1.genomes[0].positionsOfMutationsOfType(7)
+
+modifyChild() {
+	//CHECK: m3 and m5 are only in Y and m4 only in X
+	if (child.sex == "F") { //female
+		if (child.genome2.containsMarkerMutation(m3, m3_pos) | 					        	 			child.countOfMutationsOfType(m5) > 0) {
+			return F;
+		}
+	}
+	
+	else {  //male 
+		if (!child.genome2.containsMarkerMutation(m3, m3_pos) | 			
+		child.genome2.countOfMutationsOfType(m4) > 0 |
+		child.genome1.countOfMutationsOfType(m5) > 0) {
+			return F;
+		}
+	}
+	//DRIVE accepting or not childs based on mutation counts
+	return collect_parent_stats(4, 5, parent2);
+}
+
+//Davide: the commented code below can just be ignored for the moment because we don't have m2 type mutations
+//1:10000 late() {
+//	// periodically remove m2 (non-PAR) mutations that are fixed in X or Y
+//	// m1 (PAR) mutations will be automatically removed when fixed
+//	if (sim.cycle % 1000 == 0) {
+//		numY = sum(p1.individuals.sex == "M");
+//		numX = 2 * size(p1.individuals) - numY;
+//		// look at the mutations in a single Y chromosome
+//		// to find mutations that are fixed in all Y's
+//		firstMale = p1.individuals[p1.individuals.sex == "M"][0];
+//		fMG = firstMale.genomes;
+//		if (fMG[0].containsMarkerMutation(m3, m3_pos)) {
+//			firstY = fMG[0];
+//			firstX = fMG[1];
+//		} else if (fMG[1].containsMarkerMutation(m3, m3_pos)) {
+//			firstY = fMG[1];
+//			firstX = fMG[0];
+//		} else
+//			stop("### ERROR: no Ys in first male");
+//		ymuts = firstY.mutationsOfType(m2);
+//		ycounts = sim.mutationCounts(NULL, ymuts);
+//		removeY = ymuts[ycounts == numY];
+//
+//		//same for ampliconic region Y
+//		aymuts = firstY.mutationsOfType(m6); //<====== Davide
+//		aycounts = sim.mutationCounts(NULL, aymuts);
+//		removeay = aymuts[aycounts == numY];
+//		
+//		// now do the same for the X
+//		xmuts = firstX.mutationsOfType(m2);
+//		xcounts = sim.mutationCounts(NULL, xmuts);
+//		removeX = xmuts[xcounts == numX];
+//
+//		//same for ampliconic region X
+//		axmuts = firstX.mutationsOfType(m6);  //<====== Davide
+//		axcounts = sim.mutationCounts(NULL, axmuts);
+//		removeax = axmuts[axcounts == numX];
+//		
+//		cat("Cycle " + sim.cycle + ": Removing ");
+//		cat(removeX.size() + "/" + removeY.size() + " on X/Y\n");
+//		removes = c(removeY, removeX, removeay, removeax);
+//		sim.subpopulations.genomes.removeMutations(removes, T);
+//	}
+//}
+
+//	//TODO: 
+//	num(m6) - num(m7) IN DIFFERENT REGIONS
+//
+// test slim -d (DEFINE GLOBAL VARIABLE)
+//
+//
+//	Fixed mutations shall not be removed because is necessary to count the mutations that are fixed => decreased performance
+//
+// Done: Modify child to select only 6 in X and only 7 in Y
+//}
+
+10000 late() {
+	p1.outputMSSample(10, replace=F, requestedSex="F");
+	sim.treeSeqOutput("results/out.trees");
+	sim.simulationFinished();
+}
