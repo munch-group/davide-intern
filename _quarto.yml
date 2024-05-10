@@ -6,14 +6,13 @@ execute:
   echo: true
 
 book:
-  title: "Title of your project"
-  author: "Your Name"
+  title: "The Genetic Signature of meiotic drive"
+  author: "Davide Capozzi"
   chapters:
     - index.qmd
     - part: "Notebooks"
       chapters: 
-      - notebooks/01_weather.ipynb
-      - notebooks/02_interaction.ipynb
+      - notebooks/01_tsanalysis.ipynb
     - part: "Reports"
       chapters: 
       - reports/manuscript.qmd
