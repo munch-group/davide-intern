@@ -1,0 +1,457 @@
+// Meiotic drive simulation
+// We use Slim manual recipe 14.5 where we have distinct chromosomes based on mutation m3 with PAR regions
+// We model genomic elements with fixed mutation and recombination rates (Normal) alternated with elements with no mutations and a recombination rate of 0.5
+
+initialize()
+{
+	// non-WF model
+	initializeSLiMModelType("nonWF");
+	
+	// produce tree sequence
+	initializeTreeSeq();
+	
+	// global constants
+	defineConstant("MUT_RATE", 2.5e-7);
+	defineConstant("MUT_RATE_AMP");
+	defineConstant("REC_RATE");
+	defineConstant("D_PROPORTION", 0.8);
+	defineConstant("CHR_LEN", 1000);
+	defineConstant("AMPLICON_LEN", 1000);
+	defineConstant("SEX_CHR_SEGMENT_LEN", 1e7);
+	defineConstant("SEP_LEN", 2);
+	defineConstant("VARIANCE_SEED");
+	defineConstant("POPULATION_SIZE");
+	defineConstant("K", POPULATION_SIZE);
+	defineConstant("SAMPLE_INTERVAL", 10);	
+	defineConstant("NR_AMPLICONS", 3);
+//	defineConstant("DRIVE_S", 1); 
+//	defineConstant("SPERMATOGENIC_FAILURE_S", 2); 
+	
+	// ends of genomic segments
+	ends = c(
+		CHR_LEN-1,                        // autosome
+		(CHR_LEN +     SEP_LEN) - 1,      // sep
+		(CHR_LEN * 2 + SEP_LEN) - 1,      // autosome
+		(CHR_LEN * 2 + SEP_LEN * 2) - 1   // sep    (this was missing)
+	);
+
+	for (i in 1:NR_AMPLICONS) {
+		ends = c(ends, (CHR_LEN * 2 + SEP_LEN * 2 + AMPLICON_LEN * i + SEX_CHR_SEGMENT_LEN * (i-1)) - 1);     // amplicon 2
+		ends = c(ends, (CHR_LEN * 2 + SEP_LEN * 2 + AMPLICON_LEN * i + SEX_CHR_SEGMENT_LEN * i) - 1); // sex chrom segment
+	}		
+	defineConstant("ENDS", ends);
+	
+	// position of m3 mutation
+	defineConstant("m3_pos", ENDS[size(ENDS)-1]); 
+
+	// mutation rates
+	mut_rates = c(0, 0, 0, 0); // autosomes and seperators
+	for (i in 1:NR_AMPLICONS) 	
+		mut_rates = c(mut_rates, MUT_RATE_AMP, 0); 
+	initializeMutationRate(mut_rates, ENDS);		
+	
+	// mutation types
+	initializeMutationType("m1", 0.5, "f", 0.0); // PAR 
+	initializeMutationType("m2", 0.5, "f", 0.0); // non-PAR    
+	initializeMutationType("m3", 1.0, "f", 0.0); // Y marker	  
+	m3.color = "white";
+	initializeMutationType("m4", 1.0, "f", 0.0); //X driver
+	m4.color = "red";
+	m4.convertToSubstitution = F;
+	initializeMutationType("m5", 1.0, "f", 0.0); //Y driver
+	m5.color = "blue";
+	m5.convertToSubstitution = F;
+	initializeMutationType("m6", 1.0, "f", 0.0); //ampliconic gene  +
+	m6.color = "green";
+	initializeMutationType("m7", 1.0, "f", 0.0); //ampliconic gene  -
+	m7.color = "yellow";
+	
+	// genomic element types
+	initializeGenomicElementType("g1", m1, 1); // PAR: m1  
+	initializeGenomicElementType("g2", c(m2, m4, m5), c(0, D_PROPORTION, D_PROPORTION)); // non-PAR: X or Y 
+	initializeGenomicElementType("g3", c(m6, m7), c(0.5, 0.5)); //ampliconic region 
+	initializeGenomicElementType("g4", m1, 1); // Sep: No mutations
+	
+	// initialize genomic elements
+	initializeGenomicElement(g1, 0, ENDS[0]); 		      // autosome
+	initializeGenomicElement(g4, ENDS[0] + 1, ENDS[1]);   // sep
+	initializeGenomicElement(g1, ENDS[1] + 1, ENDS[2]);   // autosome
+	initializeGenomicElement(g4, ENDS[2] + 1, ENDS[3]);   // sep
+	for (i in 0:(NR_AMPLICONS-1) ) {		
+		initializeGenomicElement(g3, ENDS[3+2*i]+1, ENDS[4+2*i]);   // amplicon
+		initializeGenomicElement(g2, ENDS[4+2*i]+1, ENDS[5+2*i]);   // sex chrom segment
+	}
+	
+	// turn on sex and model as an autosome
+	initializeSex("A");
+	
+	// recombination rates in males
+	rec_rates = c(REC_RATE, 0.5, REC_RATE, 0.5); // autosomes and seperators
+	for (i in 0:(NR_AMPLICONS-1) ) 	
+		rec_rates = c(rec_rates, 0, 0); // all rec rates zero on Y
+	initializeRecombinationRate(rec_rates, ENDS, sex="M");
+	
+	// recombination rates in males
+	rec_rates = c(REC_RATE, 0.5, REC_RATE, 0.5);
+	for (i in 0:(NR_AMPLICONS-1) ) 	
+		rec_rates = c(rec_rates, 0, REC_RATE); // zero rec rate in ampliconic and non-zero otherwse
+	initializeRecombinationRate(rec_rates, ENDS, sex="F");
+
+	// find Rscript for ploting
+	if (fileExists("/usr/bin/Rscript"))
+		defineConstant("RSCRIPT", "/usr/bin/Rscript");
+	else if (fileExists("/usr/local/bin/Rscript"))
+		defineConstant("RSCRIPT", "/usr/local/bin/Rscript");
+	else
+		stop("Couldn't find Rscript.");
+}
+
+// need to make our own random number generatator that can be seeded without interferring with slims seed
+function (f)seeded_pseudo_random(i seed) {
+// TODO: test it is uniformly distr.
+	digits = 6;
+	n = 111111;
+	for (i in 1:(10+seed)) {
+		s = format("%d", c(n*n));
+		f = asInteger((nchar(s) - digits) / 2);
+		n = asInteger(substr(s, f, f+digits));
+	}
+	return n / 10^(digits+1);
+}
+
+// seeded random draw from normal distribution
+function (f)seeded_gaussian(i u, i s, i seed) {
+	rand = seeded_pseudo_random(seed);
+	return qnorm((rand), 0, VARIANCE_SEED);
+}
+	
+	
+//// random draw from cauchy distribution
+//function (f)cauchy(i x,[i u=0], [i s=3]) {
+//	return 1 / (PI * s * (1 + ((x-u)/s)^2));
+//}
+
+//// random draw from logistic distribution
+//function (f)logistic(i x) {
+//	return exp(x/DRIVE_S) / (1 + exp(x/DRIVE_S));
+//}
+
+//function (f)amplicon_meiotic_drive(i xamp_num, i yamp_num) {
+//	return 1 - (cauchy(xamp_num, u=yamp_num, s=DRIVE_S) / cauchy(0, u=0, s=DRIVE_S));
+//}
+
+//function (f)spermatogenic_failure(i xamp_num, i yamp_num) {
+//	return 1 - (cauchy(xamp_num, yamp_num, s=SPERMATOGENIC_FAILURE_S) / cauchy(0, s=SPERMATOGENIC_FAILURE_S));
+//}
+
+//function (f)gamete_meiotic_drive(i xamp_num, i yamp_num) {
+//	return amplicon_meiotic_drive(xamp_num, yamp_num) * (1 - spermatogenic_failure(xamp_num, yamp_num));
+//}
+
+
+
+// 
+function (f)amplicon_meiotic_drive(i this_num, i other_num) {
+	// seed specific to this_num other_num pair
+	seed = this_num + other_num*other_num;	
+
+	// seeded random value drawn from normal distribution
+	random_interaction_effect = seeded_gaussian(0, 20, seed);
+
+	// drive strength of this against other
+//	drive_strength = abs(xamp_num + random_interaction_effect);
+	drive_strength = abs(random_interaction_effect);
+	return drive_strength;
+}
+
+// compute probability that father passed an X to the individual (0.5 with no drive)
+function (f)amplicon_x_drive(o<Subpopulation> p, o <Individual> Ind, i start, i end) {
+	
+	// positions of mutations
+	x_pos_muts = Ind.genome1.mutationsOfType(6);
+	x_neg_muts = Ind.genome1.mutationsOfType(7);
+	y_pos_muts = Ind.genome2.mutationsOfType(6);
+	y_neg_muts = Ind.genome2.mutationsOfType(7);
+	
+	// count mutations of each kind in region 
+	x_pos_muts_in_amp = sum(x_pos_muts.position >= start & x_pos_muts.position <= end);
+	x_neg_muts_in_amp = sum(x_neg_muts.position >= start & x_neg_muts.position <= end);
+	y_pos_muts_in_amp = sum(y_pos_muts.position >= start & y_pos_muts.position <= end);
+	y_neg_muts_in_amp = sum(y_neg_muts.position >= start & y_neg_muts.position <= end);
+	
+	// for now we use m6 counts on x and m7 counts on y
+	x_n = x_pos_muts_in_amp;
+	y_n = y_neg_muts_in_amp;
+	
+	// compute drive of x and y amplicons
+	x_drive = amplicon_meiotic_drive(x_n, y_n);
+	y_drive = amplicon_meiotic_drive(y_n, x_n);
+		
+	// return drive of x amplicon against y amplicon
+	denom = x_drive + y_drive;
+	if (denom == 0) {
+		return 0.5; // no drive
+	}
+	return x_drive / denom; // 0.5 when x_drive == y_drive
+}
+
+// returns the probability that a randomly drawn parental gamete  
+function (f)parental_sperm_x_proportion (o <Individual> Ind) {
+	amplicon_x_drives = c();
+	for (i in 0:(NR_AMPLICONS-1) )	
+		amplicon_x_drives = c(amplicon_x_drives, amplicon_x_drive(p1, Ind, ENDS[3+2*i]+1, ENDS[4+2*i]));
+
+	return mean(amplicon_x_drives);
+}
+
+
+// reproduction callback
+reproduction() {
+	female = sample(p1.individuals[p1.individuals.sex == "F"], 1);
+	male = sample(p1.individuals[p1.individuals.sex == "M"], 1);
+	p1.addCrossed(female, male);
+}
+
+1 early() {
+	// initialize the pop, with a Y marker for each male
+	sim.addSubpop("p1", POPULATION_SIZE);
+	i = p1.individuals;
+	
+	// add m3 mutation
+	i[i.sex == "M"].genome2.addNewMutation(m3, 0.0, m3_pos);
+	
+	// logging
+	log = community.createLogFile("../results/sim_log.txt", logInterval=10);
+	log.addCycle();
+	log.addPopulationSexRatio();
+	log.addPopulationSize();
+	
+	if (SAMPLE_INTERVAL == 0) 
+	return;
+	
+	
+	// prepare plotting
+	sim.setValue("sexratio", NULL);	
+		
+	for (i in 1:10) { // maximum 10 amplicons
+		sim.setValue(format("X_AMP%d_M6", i), Dictionary());
+		sim.setValue(format("Y_AMP%d_M7", i), Dictionary());
+	}
+	defineConstant("pngPath", writeTempFile("plot_", ".png", ""));
+	// If we're running in SLiMgui, open a plot window
+	if (exists("slimgui"))
+		slimgui.openDocument(pngPath);
+}
+
+// live plotting
+1: early() {
+
+	if (SAMPLE_INTERVAL == 0) 
+		return;
+	// update vector of stats
+	if (sim.cycle % SAMPLE_INTERVAL == 0) {
+		males = p1.individuals[p1.individuals.sex == "M"];
+		females = p1.individuals[p1.individuals.sex == "F"];
+		
+		// sex ratio
+		ratio = size(males) / p1.individualCount;
+		sim.setValue("sexratio", c(sim.getValue("sexratio"), ratio));		
+		
+		// count m6 mutations on the X chromosomes
+		mut = sim.mutationsOfType(m6);
+		if (size(mut) > 0) {
+			for (i in 0:(size(mut)-1)) {
+				pos = mut.position[i];
+				m = mut[i];
+				freq = (males.genome1.mutationCountsInGenomes(m) + females.genome1.mutationCountsInGenomes(m)
+					+ females.genome2.mutationCountsInGenomes(m)) / (2*size(females)+size(males));
+				if (freq > 0) {
+					for (j in 1:NR_AMPLICONS) {
+						if (pos <= ENDS[2+j*2]) {
+							key = format("X_AMP%d_M6", j);
+							break;
+						}
+					}
+					d = sim.getValue(key);
+					d.setValue(pos, c(d.getValue(pos), c(sim.cycle, freq)));
+					sim.setValue(key, d);
+				}
+			}
+		}
+		// count m7 mutations on the Y chromosomes
+		mut = sim.mutationsOfType(m7);
+		if (size(mut) > 0) {
+			for (i in 0:(size(mut)-1)) {
+				pos = mut.position[i];
+				m = mut[i];
+				freq = males.genome2.mutationCountsInGenomes(m) / size(males);
+				if (freq > 0) {
+//					for (i in c(4, 6, 8, 10, 12, 14)) {
+					for (j in 1:NR_AMPLICONS) {
+						if (pos <= ENDS[2+j*2]) {
+							key = format("Y_AMP%d_M7", j);
+							break;
+						}
+					}				
+					d = sim.getValue(key);
+					d.setValue(pos, c(d.getValue(pos), c(sim.cycle, freq)));
+					sim.setValue(key, d);
+				}
+			}
+		}
+	}
+	if (sim.cycle % SAMPLE_INTERVAL != 0) {
+		// just skip to return otherwise
+		return;
+	}
+	// format and run R code for plot
+	sexratio = sim.getValue("sexratio");
+
+	X_AMP_M6_data = c(
+	sim.getValue("X_AMP1_M6"),
+	sim.getValue("X_AMP2_M6"),
+	sim.getValue("X_AMP3_M6"),
+	sim.getValue("X_AMP4_M6"),
+	sim.getValue("X_AMP5_M6"),
+	sim.getValue("X_AMP6_M6"),
+	sim.getValue("X_AMP7_M6"),
+	sim.getValue("X_AMP8_M6"),
+	sim.getValue("X_AMP9_M6"),
+	sim.getValue("X_AMP10_M6")
+	);
+
+	Y_AMP_M7_data = c(
+	sim.getValue("Y_AMP1_M7"),
+	sim.getValue("Y_AMP2_M7"),
+	sim.getValue("Y_AMP3_M7"),
+	sim.getValue("Y_AMP4_M7"),
+	sim.getValue("Y_AMP5_M7"),
+	sim.getValue("Y_AMP6_M7"),
+	sim.getValue("Y_AMP7_M7"),
+	sim.getValue("Y_AMP8_M7"),
+	sim.getValue("Y_AMP9_M7"),
+	sim.getValue("Y_AMP10_M7")
+	);
+
+	line_colors = c("red", "green3", "blue", "cyan3", "magenta", "gold", "purple", "gray", "black", "yellow");
+
+	x_mut_lines_code = c();
+	for (i in 0:(NR_AMPLICONS-1)) {
+		x_mut_lines_code = c(x_mut_lines_code, 'lapply(' + "list("+paste(sapply(X_AMP_M6_data[i].allKeys, '"c("+paste(X_AMP_M6_data[i].getValue(applyValue), sep=", ")+")";'), sep=", ")+")" + ', function(x) lines(matrix(x, ncol=2, byrow=TRUE),  col="'+line_colors[i]+'"))');
+	}
+	y_mut_lines_code = c();
+	for (i in 0:(NR_AMPLICONS-1)) {
+		y_mut_lines_code = c(y_mut_lines_code, 'lapply(' + "list("+paste(sapply(Y_AMP_M7_data[i].allKeys, '"c("+paste(Y_AMP_M7_data[i].getValue(applyValue), sep=", ")+")";'), sep=", ")+")" + ', function(x) lines(matrix(x, ncol=2, byrow=TRUE),  col="' + line_colors[i] + '"))');
+	}
+	
+	shared_params = 'type="l", cex=0.1, xlab="Generation", cex.axis=0.95, cex.lab=1.2, mgp=c(1.8, 0.7, 0)';
+	xlim = (1000 * integerDiv(size(sexratio)*SAMPLE_INTERVAL, 1000) + 1000);
+	rstr = paste('{',
+		// start plot
+		'png(width=10, height=8, units="in", res=72, pointsize=12, file="' + pngPath + '")',
+		'par(mar=c(3.5, 3.5, 0.5, 1.0), oma=c(0, 0, 0, 0), mfrow=c(3,1))',
+		// shared x axis generations
+		'x <- (1:'+size(sexratio)+') * ' + SAMPLE_INTERVAL,
+		// plot sex ratio
+		'y <- c('+paste(sexratio, sep=", ")+')',
+		'plot(x=x, y=y, xlim=c(0,'+xlim+'), ylim=c(0, 1), ylab="sex ratio", col="black", lwd=2,'+shared_params+')',
+		// plot m6 frequencies on X amplicons
+		'plot(0, 0, xlim=c(0,'+xlim+'), ylim=c(0, 1), ylab="m6 in X amplicons",'+shared_params+')',
+		x_mut_lines_code,
+		// plot m6 frequencies on X amplicons
+		'plot(0, 0, xlim=c(0,'+xlim+'), ylim=c(0, 1), ylab="m7 in Y amplicons",'+shared_params+')',
+		y_mut_lines_code,
+		// end plot
+		'box()',
+		'dev.off()',
+		'}', sep="\n");
+	scriptPath = writeTempFile("plot_", ".R", rstr);
+	system(RSCRIPT, args=scriptPath);
+	deleteFile(scriptPath);
+}
+
+// fitness scaling to maintain population size
+early() {
+	p1.fitnessScaling = K / p1.individualCount;
+
+}
+
+modifyChild() {
+	// discard childred with "illeagal" sex chromosomes
+	if (child.sex == "F") { //female
+		if (child.genome2.containsMarkerMutation(m3, m3_pos) | child.countOfMutationsOfType(m5) > 0) {
+			return F;
+		}
+	}
+	else {  //male 
+		if (!child.genome2.containsMarkerMutation(m3, m3_pos) |
+			child.genome2.countOfMutationsOfType(m4) > 0 |
+			child.genome1.countOfMutationsOfType(m5) > 0) {
+			return F;
+		}
+	}
+	
+	// compute probability that father passed an observed sex chromosome to the child
+	rand = runif(1, 0, 1);
+	x_proportion = parental_sperm_x_proportion(parent2);
+	
+	// discard accordingly
+	if (child.sex == "M") {
+		return  (1 - x_proportion) > rand;
+	} else {
+		return x_proportion > rand;
+	}
+}
+
+//
+//1:10000 late() {
+//	// periodically remove m2 (non-PAR) mutations that are fixed in X or Y
+//	// m1 (PAR) mutations will be automatically removed when fixed
+//	if (sim.cycle % 100 == 0) {
+//		numY = sum(p1.individuals.sex == "M");
+//		numX = 2 * size(p1.individuals) - numY;
+//		// look at the mutations in a single Y chromosome
+//		// to find mutations that are fixed in all Y's
+//		firstMale = p1.individuals[p1.individuals.sex == "M"][0];
+//		fMG = firstMale.genomes;
+//		if (fMG[0].containsMarkerMutation(m3, m3_pos)) {
+//			firstY = fMG[0];
+//			firstX = fMG[1];
+//		} else if (fMG[1].containsMarkerMutation(m3, m3_pos)) {
+//			firstY = fMG[1];
+//			firstX = fMG[0];
+//		} else
+//			stop("### ERROR: no Ys in first male");
+//		ymuts = firstY.mutationsOfType(m2);
+//		ycounts = sim.mutationCounts(NULL, ymuts);
+//		removeY = ymuts[ycounts == numY];
+//
+//		//same for ampliconic region Y
+//		aymuts = firstY.mutationsOfType(m6); //<====== Davide
+//		aycounts = sim.mutationCounts(NULL, aymuts);
+//		removeay = aymuts[aycounts == numY];
+//		
+//		// now do the same for the X
+//		xmuts = firstX.mutationsOfType(m2);
+//		xcounts = sim.mutationCounts(NULL, xmuts);
+//		removeX = xmuts[xcounts == numX];
+//
+//		//same for ampliconic region X
+//		axmuts = firstX.mutationsOfType(m6);  //<====== Davide
+//		axcounts = sim.mutationCounts(NULL, axmuts);
+//		removeax = axmuts[axcounts == numX];
+//		
+//		cat("Cycle " + sim.cycle + ": Removing ");
+//		cat(removeX.size() + "/" + removeY.size() + " on X/Y\n");
+//		removes = c(removeY, removeX, removeay, removeax);
+//		sim.subpopulations.genomes.removeMutations(removes, T);
+//	}
+//}
+
+// end simulation and output trees
+5000 late() {
+	p1.outputMSSample(10, replace=F, requestedSex="F");
+	sim.treeSeqOutput("../results/out.trees");
+	sim.simulationFinished();
+}
+
