@@ -1,5 +1,14 @@
+#!/home/davidec/miniconda3/envs/birc-project/bin/python
 import msprime, tskit, pyslim
 import numpy as np
+
+
+with open("params.txt") as f:
+    for line in f:
+        param = line.strip().split(" ")
+        if "MUT_RATE_AMP" in param[1]:
+            Mut_rate = float(param[1].split("=")[1])
+            break
 
 def ts_processer(ts_file_path, recapitation=False): ################################# numinds
     orig_ts = tskit.load(ts_file_path)
@@ -35,3 +44,9 @@ def ts_processer(ts_file_path, recapitation=False): ############################
         f"and mean pairwise nucleotide diversity is {ts.diversity():0.3e}.\n--------------------------\n")
 
     return ts
+
+print(Mut_rate)
+
+processed_ts = ts_processer("data/out.trees")
+
+processed_ts.dump("data/processed_ts.trees")

@@ -12,17 +12,17 @@ initialize()
 	
 	// global constants
 	defineConstant("MUT_RATE", 2.5e-7);
-	defineConstant("MUT_RATE_AMP");
-	defineConstant("REC_RATE");
+	//defineConstant("MUT_RATE_AMP");
+	//defineConstant("REC_RATE");
 	defineConstant("D_PROPORTION", 0.8);
 	defineConstant("CHR_LEN", 1000);
 	defineConstant("AMPLICON_LEN", 1000);
 	defineConstant("SEX_CHR_SEGMENT_LEN", 1e7);
 	defineConstant("SEP_LEN", 2);
-	defineConstant("VARIANCE_SEED");
-	defineConstant("POPULATION_SIZE");
+	//defineConstant("VARIANCE_SEED");
+	//defineConstant("POPULATION_SIZE");
 	defineConstant("K", POPULATION_SIZE);
-	defineConstant("SAMPLE_INTERVAL", 10);	
+	defineConstant("SAMPLE_INTERVAL", 0);	
 	defineConstant("NR_AMPLICONS", 3);
 //	defineConstant("DRIVE_S", 1); 
 //	defineConstant("SPERMATOGENIC_FAILURE_S", 2); 
@@ -97,13 +97,15 @@ initialize()
 		rec_rates = c(rec_rates, 0, REC_RATE); // zero rec rate in ampliconic and non-zero otherwse
 	initializeRecombinationRate(rec_rates, ENDS, sex="F");
 
-	// find Rscript for ploting
-	if (fileExists("/usr/bin/Rscript"))
-		defineConstant("RSCRIPT", "/usr/bin/Rscript");
-	else if (fileExists("/usr/local/bin/Rscript"))
-		defineConstant("RSCRIPT", "/usr/local/bin/Rscript");
-	else
-		stop("Couldn't find Rscript.");
+	if (exists("slimgui")) {
+		// find Rscript for ploting
+		if (fileExists("/usr/bin/Rscript"))
+			defineConstant("RSCRIPT", "/usr/bin/Rscript");
+		else if (fileExists("/usr/local/bin/Rscript"))
+			defineConstant("RSCRIPT", "/usr/local/bin/Rscript");
+		else
+			stop("Couldn't find Rscript.");
+	}
 }
 
 // need to make our own random number generatator that can be seeded without interferring with slims seed
@@ -221,7 +223,7 @@ reproduction() {
 	i[i.sex == "M"].genome2.addNewMutation(m3, 0.0, m3_pos);
 	
 	// logging
-	log = community.createLogFile("../results/sim_log.txt", logInterval=10);
+	log = community.createLogFile("data/sim_log.txt", logInterval=10);
 	log.addCycle();
 	log.addPopulationSexRatio();
 	log.addPopulationSize();
@@ -451,7 +453,7 @@ modifyChild() {
 // end simulation and output trees
 5000 late() {
 	p1.outputMSSample(10, replace=F, requestedSex="F");
-	sim.treeSeqOutput("../results/out.trees");
+	sim.treeSeqOutput("data/out.trees");
 	sim.simulationFinished();
 }
 
