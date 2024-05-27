@@ -1,0 +1,5 @@
+echo slim
+-d MUT_RATE_AMP=5e-6
+-d REC_RATE=5e-8
+-d VARIANCE_SEED=20
+-d POPULATION_SIZE=100 scripts/davides_drive_model.slim
