@@ -3,12 +3,12 @@ import msprime, tskit, pyslim
 import numpy as np
 
 
-with open("params.txt") as f:
-    for line in f:
-        param = line.strip().split(" ")
-        if "MUT_RATE_AMP" in param[1]:
-            Mut_rate = float(param[1].split("=")[1])
-            break
+# with open("params.txt") as f: 
+#     for line in f:
+#         param = line.strip().split(" ")
+#         if "MUT_RATE_AMP" in param[1]:
+#             Mut_rate = float(param[1].split("=")[1])
+#             break
 
 def ts_processer(ts_file_path, recapitation=False): ################################# numinds
     orig_ts = tskit.load(ts_file_path)
@@ -45,8 +45,13 @@ def ts_processer(ts_file_path, recapitation=False): ############################
 
     return ts
 
+import sys # Kasper
+_, slim_tree_file, processed_tree_file = sys.argv # Kasper
+import re # Kasper
+Mut_rate = float(re.search(r'u_([^_]+)', slim_tree_file).group(1)) # Kasper
+
 print(Mut_rate)
 
-processed_ts = ts_processer("data/out.trees")
+processed_ts = ts_processer(slim_tree_file) # Kasper
 
-processed_ts.dump("data/processed_ts.trees")
+processed_ts.dump(processed_tree_file) # Kasper

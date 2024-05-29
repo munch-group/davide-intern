@@ -23,7 +23,7 @@ initialize()
 	//defineConstant("POPULATION_SIZE");
 	defineConstant("K", POPULATION_SIZE);
 	defineConstant("SAMPLE_INTERVAL", 0);	
-	defineConstant("NR_AMPLICONS", 3);
+//	defineConstant("NR_AMPLICONS", 3);
 //	defineConstant("DRIVE_S", 1); 
 //	defineConstant("SPERMATOGENIC_FAILURE_S", 2); 
 	
@@ -451,9 +451,10 @@ modifyChild() {
 //}
 
 // end simulation and output trees
-5000 late() {
+GENERATIONS late() {
 	p1.outputMSSample(10, replace=F, requestedSex="F");
-	sim.treeSeqOutput("data/out.trees");
+	print("Outputting trees to "+OUTPUT_PREFIX+".trees");
+	sim.treeSeqOutput(OUTPUT_PREFIX+".trees");
 	sim.simulationFinished();
 }
 
