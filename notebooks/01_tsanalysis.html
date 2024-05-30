@@ -424,45 +424,39 @@ and mean pairwise nucleotide diversity is 3.521e-04.
 <span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a><span class="co">    '''</span></span>
 <span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cell-8" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plotter(ts, fun):</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> tree <span class="kw">in</span> ts:</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">pass</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div id="cell-9" class="cell" data-execution_count="9">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> msprime</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> SVG, display</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate an ancestral history for 3 diploid samples under the coalescent</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># with recombination on a 5kb region with human-like parameters.</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>ts1 <span class="op">=</span> msprime.sim_ancestry(</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>samples<span class="op">=</span><span class="dv">3</span>,</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>recombination_rate<span class="op">=</span><span class="fl">1e-8</span>,</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>sequence_length<span class="op">=</span><span class="dv">5_000</span>,</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>population_size<span class="op">=</span><span class="dv">10_000</span>,</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>random_seed<span class="op">=</span><span class="dv">123456</span>)</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualise the simulated ancestral history.</span></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>SVG(ts1.draw_svg())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-8" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> msprime</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> SVG, display</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate an ancestral history for 3 diploid samples under the coalescent</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co"># with recombination on a 5kb region with human-like parameters.</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>ts1 <span class="op">=</span> msprime.sim_ancestry(</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>samples<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>recombination_rate<span class="op">=</span><span class="fl">1e-8</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>sequence_length<span class="op">=</span><span class="dv">5_000</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>population_size<span class="op">=</span><span class="dv">10_000</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>random_seed<span class="op">=</span><span class="dv">123456</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualise the simulated ancestral history.</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>SVG(ts1.draw_svg())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="9">
 <div>
 <figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-10-output-1.svg" class="img-fluid figure-img"></p>
+<p><img src="01_tsanalysis_files/figure-html/cell-9-output-1.svg" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
-<div id="cell-10" class="cell" data-execution_count="13">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>n_windows <span class="op">=</span> <span class="dv">5</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>ts2.Tajimas_D(windows<span class="op">=</span>np.linspace(<span class="dv">0</span>, ts2.sequence_length, n_windows <span class="op">+</span> <span class="dv">1</span>))</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> ts2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-9" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>n_windows <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>ts2.Tajimas_D(windows<span class="op">=</span>np.linspace(<span class="dv">0</span>, ts2.sequence_length, n_windows <span class="op">+</span> <span class="dv">1</span>))</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> ts2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cell-11" class="cell" data-execution_count="38">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>ts_visualizer([ts1, ts2], <span class="dv">0</span>, <span class="dv">1000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-10" class="cell" data-execution_count="38">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>ts_visualizer([ts1, ts2], <span class="dv">0</span>, <span class="dv">1000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-12-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="01_tsanalysis_files/figure-html/cell-11-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -473,21 +467,21 @@ and mean pairwise nucleotide diversity is 3.521e-04.
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-12-output-3.png" class="img-fluid figure-img"></p>
+<p><img src="01_tsanalysis_files/figure-html/cell-11-output-3.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-12-output-4.png" class="img-fluid figure-img"></p>
+<p><img src="01_tsanalysis_files/figure-html/cell-11-output-4.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-12-output-5.png" class="img-fluid figure-img"></p>
+<p><img src="01_tsanalysis_files/figure-html/cell-11-output-5.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -495,20 +489,35 @@ and mean pairwise nucleotide diversity is 3.521e-04.
 <pre><code>0</code></pre>
 </div>
 </div>
-<div id="cell-12" class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ts_analyzer(ts_list):</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">pass</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-11" class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ts_analyzer(ts_list):</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">pass</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cell-13" class="cell" data-execution_count="23">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>swept_tree <span class="op">=</span> ts.at(<span class="dv">10_000</span>)  <span class="co"># or you can get e.g. the nth tree using ts.at_index(n)</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>intvl <span class="op">=</span> swept_tree.interval</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Tree number </span><span class="sc">{</span>swept_tree<span class="sc">.</span>index<span class="sc">}</span><span class="ss">, which runs from position </span><span class="sc">{</span>intvl<span class="sc">.</span>left<span class="sc">}</span><span class="ss"> to </span><span class="sc">{</span>intvl<span class="sc">.</span>right<span class="sc">}</span><span class="ss">:"</span>)</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw it at a wide size, to make room for all 40 tips</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>swept_tree.draw_svg(size<span class="op">=</span>(<span class="dv">1000</span>, <span class="dv">200</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-12" class="cell" data-execution_count="23">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>swept_tree <span class="op">=</span> ts.at(<span class="dv">10_000</span>)  <span class="co"># or you can get e.g. the nth tree using ts.at_index(n)</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>intvl <span class="op">=</span> swept_tree.interval</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Tree number </span><span class="sc">{</span>swept_tree<span class="sc">.</span>index<span class="sc">}</span><span class="ss">, which runs from position </span><span class="sc">{</span>intvl<span class="sc">.</span>left<span class="sc">}</span><span class="ss"> to </span><span class="sc">{</span>intvl<span class="sc">.</span>right<span class="sc">}</span><span class="ss">:"</span>)</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw it at a wide size, to make room for all 40 tips</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>swept_tree.draw_svg(size<span class="op">=</span>(<span class="dv">1000</span>, <span class="dv">200</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Tree number 1, which runs from position 10000.0 to 10001.0:</code></pre>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="23">
+<div>
+<figure class="figure">
+<p><img src="01_tsanalysis_files/figure-html/cell-13-output-2.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="cell-13" class="cell" data-execution_count="24">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>reduced_ts <span class="op">=</span> ts.simplify([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>])  <span class="co"># simplify to the first 10 samples</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Genealogy of the first 10 samples for the first 5kb of the genome"</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>reduced_ts.draw_svg(x_lim<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">5000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Genealogy of the first 10 samples for the first 5kb of the genome</code></pre>
+</div>
+<div class="cell-output cell-output-display" data-execution_count="24">
 <div>
 <figure class="figure">
 <p><img src="01_tsanalysis_files/figure-html/cell-14-output-2.svg" class="img-fluid figure-img"></p>
@@ -516,32 +525,17 @@ and mean pairwise nucleotide diversity is 3.521e-04.
 </div>
 </div>
 </div>
-<div id="cell-14" class="cell" data-execution_count="24">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>reduced_ts <span class="op">=</span> ts.simplify([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>])  <span class="co"># simplify to the first 10 samples</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Genealogy of the first 10 samples for the first 5kb of the genome"</span>)</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>reduced_ts.draw_svg(x_lim<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">5000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Genealogy of the first 10 samples for the first 5kb of the genome</code></pre>
-</div>
-<div class="cell-output cell-output-display" data-execution_count="24">
-<div>
-<figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-15-output-2.svg" class="img-fluid figure-img"></p>
-</figure>
-</div>
-</div>
-</div>
-<div id="cell-15" class="cell" data-execution_count="28">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> ts.diversity()</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Average diversity per unit sequence length = </span><span class="sc">{</span>d<span class="sc">:.3G}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-14" class="cell" data-execution_count="28">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> ts.diversity()</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Average diversity per unit sequence length = </span><span class="sc">{</span>d<span class="sc">:.3G}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Average diversity per unit sequence length = 0.000345</code></pre>
 </div>
 </div>
-<div id="cell-16" class="cell" data-execution_count="29">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>windows <span class="op">=</span> np.linspace(<span class="dv">0</span>, ts.sequence_length, num<span class="op">=</span><span class="dv">5</span>)</span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> ts.diversity(windows<span class="op">=</span>windows)</span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(windows, d, sep<span class="op">=</span><span class="st">"</span><span class="ch">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-15" class="cell" data-execution_count="29">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>windows <span class="op">=</span> np.linspace(<span class="dv">0</span>, ts.sequence_length, num<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> ts.diversity(windows<span class="op">=</span>windows)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(windows, d, sep<span class="op">=</span><span class="st">"</span><span class="ch">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[    0.  7502. 15004. 22506. 30008.]
 [0.         0.         0.00032951 0.00105048]</code></pre>
