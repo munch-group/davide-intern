@@ -7,7 +7,7 @@ slim_model_file = 'scripts/davides_drive_model.slim'
 slim_output_dir = 'steps/slim_tree_seqs/'
 processed_output_dir = 'steps/processed_tree_seqs/'
 
-N = 1000
+N = 10
 u = 5e-6
 A = 3
 g = 6000
