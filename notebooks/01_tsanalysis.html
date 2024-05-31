@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>The Genetic Signature of meiotic drive - (and 105 individuals).</title>
+<title>The Genetic Signature of meiotic drive - Simulate an ancestral history for 3 diploid samples under the coalescent</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -202,7 +202,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../notebooks/01_tsanalysis.html">Notebooks</a></li><li class="breadcrumb-item"><a href="../notebooks/01_tsanalysis.html"><span class="chapter-title">01_tsanalysis.html</span></a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title"><span class="chapter-title">(and 105 individuals).</span></h1>
+<h1 class="title"><span class="chapter-title">Simulate an ancestral history for 3 diploid samples under the coalescent</span></h1>
 </div>
 
 
@@ -226,237 +226,133 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib <span class="im">import</span> pyplot <span class="im">as</span> plt</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cell-2" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Getting recombination information from slim simulation</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#SLiM uses end positions while msprime uses start positions (msprime list will be n + 1)</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>Mut_rate <span class="op">=</span> <span class="fl">1.5e-8</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>Rec_rate <span class="op">=</span> <span class="fl">1e-8</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">#Amp_rec_rate = ??? SHOULD BE HIGHER</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>Chr_len <span class="op">=</span> <span class="dv">9999</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>Sep_len <span class="op">=</span> <span class="dv">2</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>Amplicon_len <span class="op">=</span> <span class="dv">50</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>Sex_Chr_len <span class="op">=</span> (Chr_len <span class="op">//</span> <span class="dv">5</span>) <span class="op">-</span> Amplicon_len</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>Positions <span class="op">=</span> [Chr_len, Chr_len <span class="op">+</span> Sep_len,</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        (Chr_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> Sep_len <span class="op">+</span> <span class="dv">1</span>,</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>        (Chr_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> (Sep_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">1</span>,</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        (Chr_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> (Sep_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">2</span> <span class="op">+</span> Amplicon_len <span class="op">+</span> (Sex_Chr_len),</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        (Chr_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> (Sep_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">3</span> <span class="op">+</span> (Amplicon_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> (Sex_Chr_len),</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        (Chr_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> (Sep_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">4</span> <span class="op">+</span> (Amplicon_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> (Sex_Chr_len <span class="op">*</span> <span class="dv">2</span>),</span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>        (Chr_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> (Sep_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">5</span> <span class="op">+</span> (Amplicon_len <span class="op">*</span> <span class="dv">3</span>) <span class="op">+</span> (Sex_Chr_len <span class="op">*</span> <span class="dv">2</span>),</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>        (Chr_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> (Sep_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">6</span> <span class="op">+</span> (Amplicon_len <span class="op">*</span> <span class="dv">3</span>) <span class="op">+</span> (Sex_Chr_len <span class="op">*</span> <span class="dv">3</span>),</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>        (Chr_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> (Sep_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">7</span> <span class="op">+</span> (Amplicon_len <span class="op">*</span> <span class="dv">4</span>) <span class="op">+</span> (Sex_Chr_len <span class="op">*</span> <span class="dv">3</span>),</span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>        (Chr_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> (Sep_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">8</span> <span class="op">+</span> (Amplicon_len <span class="op">*</span> <span class="dv">4</span>) <span class="op">+</span> (Sex_Chr_len <span class="op">*</span> <span class="dv">4</span>),</span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>        (Chr_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> (Sep_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">9</span> <span class="op">+</span> (Amplicon_len <span class="op">*</span> <span class="dv">5</span>) <span class="op">+</span> (Sex_Chr_len <span class="op">*</span> <span class="dv">4</span>),</span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>        (Chr_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> (Sep_len <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">10</span> <span class="op">+</span> (Amplicon_len <span class="op">*</span> <span class="dv">5</span>) <span class="op">+</span> (Sex_Chr_len <span class="op">*</span> <span class="dv">5</span>)]</span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="co">#No rec in males outside PAR</span></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>Male_Recrates <span class="op">=</span> [Rec_rate, <span class="fl">0.5</span>, Rec_rate, <span class="fl">0.5</span>, <span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">0</span>]</span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>Female_recrates <span class="op">=</span> [Rec_rate, <span class="fl">0.5</span>, Rec_rate, <span class="fl">0.5</span>, Rec_rate, <span class="fl">0.5</span>, Rec_rate, <span class="fl">0.5</span>, Rec_rate, <span class="fl">0.5</span>, Rec_rate, <span class="fl">0.5</span>, Rec_rate] </span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co">#Recombination maps in tsv files use cM/Mb as a standard</span></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a><span class="co">#Rescaling recombination rates accordingly:</span></span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>Male_Recrates_scaled <span class="op">=</span> [r <span class="op">/</span> <span class="fl">1e-8</span> <span class="cf">for</span> r <span class="kw">in</span> Male_Recrates]</span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>Female_Recrates_scaled <span class="op">=</span> [r <span class="op">/</span> <span class="fl">1e-8</span> <span class="cf">for</span> r <span class="kw">in</span> Female_recrates]</span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>Female_Recrates_scaled</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="2">
-<pre><code>[1.0,
- 50000000.0,
- 1.0,
- 50000000.0,
- 1.0,
- 50000000.0,
- 1.0,
- 50000000.0,
- 1.0,
- 50000000.0,
- 1.0,
- 50000000.0,
- 1.0]</code></pre>
+<div id="cell-2" class="cell" data-execution_count="37">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> TajimasD(ts_list, windows_len<span class="op">=</span><span class="dv">1800</span>):   </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">type</span>(ts_list) <span class="op">==</span> tskit.trees.TreeSequence:</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>        L <span class="op">=</span> <span class="bu">int</span>(ts_list.sequence_length)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>        windows <span class="op">=</span> np.linspace(<span class="dv">0</span>, L, L<span class="op">//</span>windows_len)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        plt.stairs(ts_list.Tajimas_D(windows<span class="op">=</span>windows), windows<span class="op">/</span><span class="dv">1_000</span>, baseline<span class="op">=</span><span class="va">None</span>)  <span class="co"># Default is mode="site"</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        plt.title(<span class="st">"Tajima's D"</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        plt.xlabel(<span class="st">"Genome position (kb)"</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        plt.ylabel(<span class="st">"D"</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        plt.show()</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="bu">type</span>(ts_list) <span class="op">==</span> <span class="bu">list</span>:</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> ts <span class="kw">in</span> ts_list:</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>            L <span class="op">=</span> <span class="bu">int</span>(ts.sequence_length)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>            windows <span class="op">=</span> np.linspace(<span class="dv">0</span>, L, L<span class="op">//</span>windows_len)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>            plt.stairs(ts.Tajimas_D(windows<span class="op">=</span>windows), windows<span class="op">/</span><span class="dv">1_000</span>, baseline<span class="op">=</span><span class="va">None</span>)</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        plt.xlabel(<span class="st">"Genome position (kb)"</span>)</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>        plt.ylabel(<span class="st">"D"</span>)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        plt.show()</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span> </span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> Tmrca(ts_list):</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="co">#Plotting TMRCA for given tree sequence </span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">type</span>(ts_list) <span class="op">==</span> tskit.trees.TreeSequence:      </span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>        <span class="co">#filtering trees with more than one branch </span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>        trees_onebranch <span class="op">=</span> [tree <span class="cf">for</span> tree <span class="kw">in</span> ts_list.trees() <span class="cf">if</span> <span class="bu">len</span>(tree.roots) <span class="op">==</span> <span class="dv">1</span>]</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>        tmrca <span class="op">=</span> np.zeros(<span class="bu">len</span>(trees_onebranch)) <span class="co">#initializing lists</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>        breakpoints <span class="op">=</span> np.zeros(<span class="bu">len</span>(trees_onebranch))</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> tree <span class="kw">in</span> ts_list.trees():</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">len</span>(tree.roots) <span class="op">==</span> <span class="dv">1</span>:</span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>                tmrca[tree.index] <span class="op">=</span> tree.time(tree.root)</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>                breakpoints[tree.index] <span class="op">=</span> tree.interval[<span class="dv">0</span>]     <span class="co">#t[0] + (t[1] + t[0] / 2)</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>            plt.plot(breakpoints <span class="op">/</span> <span class="dv">1000</span>, tmrca, <span class="st">"o"</span>)</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>        plt.ylabel(<span class="st">"T_mrca (Generations)"</span>)</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>        plt.xlabel(<span class="st">"Position (kb)"</span>)</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>        plt.show()</span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="bu">type</span>(ts_list) <span class="op">==</span> <span class="bu">list</span>:</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> ts <span class="kw">in</span> ts_list:</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>            trees_onebranch <span class="op">=</span> [tree <span class="cf">for</span> tree <span class="kw">in</span> ts.trees() <span class="cf">if</span> <span class="bu">len</span>(tree.roots) <span class="op">==</span> <span class="dv">1</span>]</span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>            tmrca <span class="op">=</span> np.zeros(<span class="bu">len</span>(trees_onebranch)) <span class="co">#initializing lists</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>            breakpoints <span class="op">=</span> np.zeros(<span class="bu">len</span>(trees_onebranch))</span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> tree <span class="kw">in</span> ts.trees():</span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="bu">len</span>(tree.roots) <span class="op">==</span> <span class="dv">1</span>:</span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>                    tmrca[tree.index] <span class="op">=</span> tree.time(tree.root)</span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>                    breakpoints[tree.index] <span class="op">=</span> tree.interval[<span class="dv">0</span>]</span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>                    <span class="co">#t[0] + (t[1] + t[0] / 2)</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>            plt.plot(breakpoints <span class="op">/</span> <span class="dv">1000</span>, tmrca, <span class="st">"o"</span>)</span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>        plt.ylabel(<span class="st">"T_mrca (Generations)"</span>)</span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>        plt.xlabel(<span class="st">"Position (kb)"</span>)</span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a>        plt.show()</span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<div id="cell-3" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ts_visualizer(ts_list, startpos, endpos):</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    Tmrca(ts_list)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    fig, (ax1, ax2) <span class="op">=</span> plt.subplots(ncols<span class="op">=</span><span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">3</span>))</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ts <span class="kw">in</span> ts_list:</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        L <span class="op">=</span> <span class="bu">int</span>(ts.sequence_length)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        windows <span class="op">=</span> np.linspace(<span class="dv">0</span>, L, num<span class="op">=</span>L<span class="op">//</span><span class="dv">500</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>        ax1.stairs(ts.diversity(windows<span class="op">=</span>windows), windows<span class="op">/</span><span class="dv">1_000</span>, baseline<span class="op">=</span><span class="va">None</span>)  <span class="co"># Default is mode="site"</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        ax1.set_title(<span class="st">"Site-based calculation"</span>)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        <span class="co">#ax1.set_xlim(4e3, 6e3)</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        ax1.set_yscale(<span class="st">"log"</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        <span class="co">#ax1.set_ylim(1e-6, 1e-2)</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        ax2.stairs(ts.diversity(windows<span class="op">=</span>windows, mode<span class="op">=</span><span class="st">"branch"</span>), windows<span class="op">/</span><span class="dv">1_000</span>, baseline<span class="op">=</span><span class="va">None</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">#ax2.set_xlim(4e3, 6e3)</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>        ax2.set_yscale(<span class="st">"log"</span>)</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        ax1.set_ylabel(<span class="st">"Diversity"</span>)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        ax1.set_xlabel(<span class="st">"Genome position (kb)"</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        ax2.set_xlabel(<span class="st">"Genome position (kb)"</span>)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        ax2.set_title(<span class="st">"Branch-length-based calculation"</span>)</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    plt.show()</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    fig, (ax1, ax2) <span class="op">=</span> plt.subplots(ncols<span class="op">=</span><span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">3</span>))</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ts <span class="kw">in</span> ts_list:</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>        afs1 <span class="op">=</span> ts.allele_frequency_spectrum(polarised<span class="op">=</span><span class="va">True</span>, mode<span class="op">=</span><span class="st">"branch"</span>)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        ax1.bar(np.arange(ts.num_samples<span class="op">+</span><span class="dv">1</span>), afs1)</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>        ax1.set_title(<span class="st">"Genome-wide branch-length AFS"</span>)</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        restricted_ts <span class="op">=</span> ts.keep_intervals([[startpos, endpos]])</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        afs2 <span class="op">=</span> restricted_ts.allele_frequency_spectrum(polarised<span class="op">=</span><span class="va">True</span>, mode<span class="op">=</span><span class="st">"branch"</span>)</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        ax2.bar(np.arange(restricted_ts.num_samples<span class="op">+</span><span class="dv">1</span>), afs2)</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        ax2.set_title(<span class="ss">f"Branch-length AFS between </span><span class="sc">{</span>startpos<span class="sc">}</span><span class="ss"> and </span><span class="sc">{</span>endpos<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    plt.show()</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    TajimasD(ts_list)</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    <span class="co">'''</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="co">        afs = ts.allele_frequency_spectrum()</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="co">        plt.bar(np.arange(ts.num_samples + 1), afs)</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="co">        plt.title("Unpolarised allele frequency spectrum")</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="co">        plt.show()</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="co">    '''</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cell-3" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ts_processer(ts_file_path, recapitation<span class="op">=</span><span class="va">False</span>): <span class="co">################################# numinds</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    orig_ts <span class="op">=</span> tskit.load(ts_file_path)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> recapitation <span class="op">==</span> <span class="va">False</span>:</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        rts <span class="op">=</span> orig_ts</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>: <span class="co">#no recapitation needed right now </span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="st">"Should write function without recapitation"</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">#Simplification: discarding less informing nodes from tree</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    rng <span class="op">=</span> np.random.default_rng(seed<span class="op">=</span><span class="dv">3</span>)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    alive_inds <span class="op">=</span> pyslim.individuals_alive_at(rts, <span class="dv">0</span>)</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    keep_indivs <span class="op">=</span> rng.choice(alive_inds, <span class="dv">100</span>, replace<span class="op">=</span><span class="va">False</span>) <span class="co">#################################</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    keep_nodes <span class="op">=</span> []</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> keep_indivs:</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        keep_nodes.extend(rts.individual(i).nodes)</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    sts <span class="op">=</span> rts.simplify(keep_nodes, keep_input_roots<span class="op">=</span><span class="va">True</span>) </span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"SIMPLIFICATION:</span><span class="ch">\n</span><span class="ss">Before, there were </span><span class="sc">{</span>rts<span class="sc">.</span>num_samples<span class="sc">}</span><span class="ss"> sample nodes (and </span><span class="sc">{</span>rts<span class="sc">.</span>num_individuals<span class="sc">}</span><span class="ss"> individuals)</span><span class="ch">\n</span><span class="ss">"</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"in the tree sequence, and now there are </span><span class="sc">{</span>sts<span class="sc">.</span>num_samples<span class="sc">}</span><span class="ss"> sample nodes</span><span class="ch">\n</span><span class="ss">"</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"(and </span><span class="sc">{</span>sts<span class="sc">.</span>num_individuals<span class="sc">}</span><span class="ss"> individuals).</span><span class="ch">\n</span><span class="ss">--------------------------</span><span class="ch">\n</span><span class="ss">"</span>)</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="co">#Adding neutral mutation types after the simulation has occured</span></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="co">#ACTUALLY WE HAVE ONLY NEUTRAL MUTATION TYPES IN OUR SIMULATION &lt;====== DAVIDE</span></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    next_id <span class="op">=</span> pyslim.next_slim_mutation_id(sts)</span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    ts <span class="op">=</span> msprime.sim_mutations(</span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>            sts,</span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>            rate<span class="op">=</span>Mut_rate,</span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>            model<span class="op">=</span>msprime.SLiMMutationModel(<span class="bu">type</span><span class="op">=</span><span class="dv">0</span>, next_id<span class="op">=</span>next_id), <span class="co">#using mutation type 0 because its not used in SLiM </span></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>            keep<span class="op">=</span><span class="va">True</span>, <span class="co">#keeps other mut types </span></span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"ADDING NEUTRAL MUTATIONS:</span><span class="ch">\n</span><span class="ss">The tree sequence now has </span><span class="sc">{</span>ts<span class="sc">.</span>num_mutations<span class="sc">}</span><span class="ss"> mutations,</span><span class="ch">\n</span><span class="ss">"</span></span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f"and mean pairwise nucleotide diversity is </span><span class="sc">{</span>ts<span class="sc">.</span>diversity()<span class="sc">:0.3e}</span><span class="ss">.</span><span class="ch">\n</span><span class="ss">--------------------------</span><span class="ch">\n</span><span class="ss">"</span>)</span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> ts</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div id="cell-4" class="cell" data-execution_count="37">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> TajimasD(ts_list, windows_len<span class="op">=</span><span class="dv">1800</span>):   </span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">type</span>(ts_list) <span class="op">==</span> tskit.trees.TreeSequence:</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        L <span class="op">=</span> <span class="bu">int</span>(ts_list.sequence_length)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        windows <span class="op">=</span> np.linspace(<span class="dv">0</span>, L, L<span class="op">//</span>windows_len)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        plt.stairs(ts_list.Tajimas_D(windows<span class="op">=</span>windows), windows<span class="op">/</span><span class="dv">1_000</span>, baseline<span class="op">=</span><span class="va">None</span>)  <span class="co"># Default is mode="site"</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        plt.title(<span class="st">"Tajima's D"</span>)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        plt.xlabel(<span class="st">"Genome position (kb)"</span>)</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        plt.ylabel(<span class="st">"D"</span>)</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        plt.show()</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="bu">type</span>(ts_list) <span class="op">==</span> <span class="bu">list</span>:</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> ts <span class="kw">in</span> ts_list:</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>            L <span class="op">=</span> <span class="bu">int</span>(ts.sequence_length)</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>            windows <span class="op">=</span> np.linspace(<span class="dv">0</span>, L, L<span class="op">//</span>windows_len)</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>            plt.stairs(ts.Tajimas_D(windows<span class="op">=</span>windows), windows<span class="op">/</span><span class="dv">1_000</span>, baseline<span class="op">=</span><span class="va">None</span>)</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>        plt.xlabel(<span class="st">"Genome position (kb)"</span>)</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>        plt.ylabel(<span class="st">"D"</span>)</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        plt.show()</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span> </span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> Tmrca(ts_list):</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>    <span class="co">#Plotting TMRCA for given tree sequence </span></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">type</span>(ts_list) <span class="op">==</span> tskit.trees.TreeSequence:      </span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>        <span class="co">#filtering trees with more than one branch </span></span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>        trees_onebranch <span class="op">=</span> [tree <span class="cf">for</span> tree <span class="kw">in</span> ts_list.trees() <span class="cf">if</span> <span class="bu">len</span>(tree.roots) <span class="op">==</span> <span class="dv">1</span>]</span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        tmrca <span class="op">=</span> np.zeros(<span class="bu">len</span>(trees_onebranch)) <span class="co">#initializing lists</span></span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>        breakpoints <span class="op">=</span> np.zeros(<span class="bu">len</span>(trees_onebranch))</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> tree <span class="kw">in</span> ts_list.trees():</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> <span class="bu">len</span>(tree.roots) <span class="op">==</span> <span class="dv">1</span>:</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>                tmrca[tree.index] <span class="op">=</span> tree.time(tree.root)</span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>                breakpoints[tree.index] <span class="op">=</span> tree.interval[<span class="dv">0</span>]     <span class="co">#t[0] + (t[1] + t[0] / 2)</span></span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>            plt.plot(breakpoints <span class="op">/</span> <span class="dv">1000</span>, tmrca, <span class="st">"o"</span>)</span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>        plt.ylabel(<span class="st">"T_mrca (Generations)"</span>)</span>
-<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>        plt.xlabel(<span class="st">"Position (kb)"</span>)</span>
-<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>        plt.show()</span>
-<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elif</span> <span class="bu">type</span>(ts_list) <span class="op">==</span> <span class="bu">list</span>:</span>
-<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> ts <span class="kw">in</span> ts_list:</span>
-<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>            trees_onebranch <span class="op">=</span> [tree <span class="cf">for</span> tree <span class="kw">in</span> ts.trees() <span class="cf">if</span> <span class="bu">len</span>(tree.roots) <span class="op">==</span> <span class="dv">1</span>]</span>
-<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>            tmrca <span class="op">=</span> np.zeros(<span class="bu">len</span>(trees_onebranch)) <span class="co">#initializing lists</span></span>
-<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>            breakpoints <span class="op">=</span> np.zeros(<span class="bu">len</span>(trees_onebranch))</span>
-<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>            <span class="cf">for</span> tree <span class="kw">in</span> ts.trees():</span>
-<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> <span class="bu">len</span>(tree.roots) <span class="op">==</span> <span class="dv">1</span>:</span>
-<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>                    tmrca[tree.index] <span class="op">=</span> tree.time(tree.root)</span>
-<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>                    breakpoints[tree.index] <span class="op">=</span> tree.interval[<span class="dv">0</span>]</span>
-<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>                    <span class="co">#t[0] + (t[1] + t[0] / 2)</span></span>
-<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>            plt.plot(breakpoints <span class="op">/</span> <span class="dv">1000</span>, tmrca, <span class="st">"o"</span>)</span>
-<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>        plt.ylabel(<span class="st">"T_mrca (Generations)"</span>)</span>
-<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>        plt.xlabel(<span class="st">"Position (kb)"</span>)</span>
-<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>        plt.show()</span>
-<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div id="cell-6" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ts2 <span class="op">=</span> ts_processer(<span class="st">"../results/out.trees"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>SIMPLIFICATION:
-Before, there were 214 sample nodes (and 107 individuals)
-in the tree sequence, and now there are 200 sample nodes
-
-ADDING NEUTRAL MUTATIONS:
-The tree sequence now has 183 mutations,
-and mean pairwise nucleotide diversity is 3.521e-04.
---------------------------
-</code></pre>
-</div>
-</div>
-<div id="cell-7" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ts_visualizer(ts_list, startpos, endpos):</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    Tmrca(ts_list)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    fig, (ax1, ax2) <span class="op">=</span> plt.subplots(ncols<span class="op">=</span><span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">3</span>))</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ts <span class="kw">in</span> ts_list:</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>        L <span class="op">=</span> <span class="bu">int</span>(ts.sequence_length)</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>        windows <span class="op">=</span> np.linspace(<span class="dv">0</span>, L, num<span class="op">=</span>L<span class="op">//</span><span class="dv">500</span>)</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>        ax1.stairs(ts.diversity(windows<span class="op">=</span>windows), windows<span class="op">/</span><span class="dv">1_000</span>, baseline<span class="op">=</span><span class="va">None</span>)  <span class="co"># Default is mode="site"</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>        ax1.set_title(<span class="st">"Site-based calculation"</span>)</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>        <span class="co">#ax1.set_xlim(4e3, 6e3)</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>        ax1.set_yscale(<span class="st">"log"</span>)</span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>        <span class="co">#ax1.set_ylim(1e-6, 1e-2)</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>        ax2.stairs(ts.diversity(windows<span class="op">=</span>windows, mode<span class="op">=</span><span class="st">"branch"</span>), windows<span class="op">/</span><span class="dv">1_000</span>, baseline<span class="op">=</span><span class="va">None</span>)</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>        <span class="co">#ax2.set_xlim(4e3, 6e3)</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>        ax2.set_yscale(<span class="st">"log"</span>)</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        ax1.set_ylabel(<span class="st">"Diversity"</span>)</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        ax1.set_xlabel(<span class="st">"Genome position (kb)"</span>)</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        ax2.set_xlabel(<span class="st">"Genome position (kb)"</span>)</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>        ax2.set_title(<span class="st">"Branch-length-based calculation"</span>)</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    plt.show()</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    fig, (ax1, ax2) <span class="op">=</span> plt.subplots(ncols<span class="op">=</span><span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">3</span>))</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> ts <span class="kw">in</span> ts_list:</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>        afs1 <span class="op">=</span> ts.allele_frequency_spectrum(polarised<span class="op">=</span><span class="va">True</span>, mode<span class="op">=</span><span class="st">"branch"</span>)</span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>        ax1.bar(np.arange(ts.num_samples<span class="op">+</span><span class="dv">1</span>), afs1)</span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        ax1.set_title(<span class="st">"Genome-wide branch-length AFS"</span>)</span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>        restricted_ts <span class="op">=</span> ts.keep_intervals([[startpos, endpos]])</span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>        afs2 <span class="op">=</span> restricted_ts.allele_frequency_spectrum(polarised<span class="op">=</span><span class="va">True</span>, mode<span class="op">=</span><span class="st">"branch"</span>)</span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>        ax2.bar(np.arange(restricted_ts.num_samples<span class="op">+</span><span class="dv">1</span>), afs2)</span>
-<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>        ax2.set_title(<span class="ss">f"Branch-length AFS between </span><span class="sc">{</span>startpos<span class="sc">}</span><span class="ss"> and </span><span class="sc">{</span>endpos<span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>    plt.show()</span>
-<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>    TajimasD(ts_list)</span>
-<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>    <span class="co">'''</span></span>
-<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a><span class="co">        afs = ts.allele_frequency_spectrum()</span></span>
-<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a><span class="co">        plt.bar(np.arange(ts.num_samples + 1), afs)</span></span>
-<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a><span class="co">        plt.title("Unpolarised allele frequency spectrum")</span></span>
-<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a><span class="co">        plt.show()</span></span>
-<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a><span class="co">    '''</span></span>
-<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div id="cell-8" class="cell" data-execution_count="9">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> msprime</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> SVG, display</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate an ancestral history for 3 diploid samples under the coalescent</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co"># with recombination on a 5kb region with human-like parameters.</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>ts1 <span class="op">=</span> msprime.sim_ancestry(</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>samples<span class="op">=</span><span class="dv">3</span>,</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>recombination_rate<span class="op">=</span><span class="fl">1e-8</span>,</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>sequence_length<span class="op">=</span><span class="dv">5_000</span>,</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>population_size<span class="op">=</span><span class="dv">10_000</span>,</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>random_seed<span class="op">=</span><span class="dv">123456</span>)</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualise the simulated ancestral history.</span></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>SVG(ts1.draw_svg())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-4" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> msprime</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> SVG, display</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># with recombination on a 5kb region with human-like parameters.</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>ts1 <span class="op">=</span> msprime.sim_ancestry(</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>samples<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>recombination_rate<span class="op">=</span><span class="fl">1e-8</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>sequence_length<span class="op">=</span><span class="dv">5_000</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>population_size<span class="op">=</span><span class="dv">10_000</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>random_seed<span class="op">=</span><span class="dv">123456</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualise the simulated ancestral history.</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>SVG(ts1.draw_svg())</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display" data-execution_count="9">
 <div>
 <figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-9-output-1.svg" class="img-fluid figure-img"></p>
+<p><img src="01_tsanalysis_files/figure-html/cell-5-output-1.svg" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
-<div id="cell-9" class="cell" data-execution_count="13">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>n_windows <span class="op">=</span> <span class="dv">5</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>ts2.Tajimas_D(windows<span class="op">=</span>np.linspace(<span class="dv">0</span>, ts2.sequence_length, n_windows <span class="op">+</span> <span class="dv">1</span>))</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> ts2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-5" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>n_windows <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ts2.Tajimas_D(windows<span class="op">=</span>np.linspace(<span class="dv">0</span>, ts2.sequence_length, n_windows <span class="op">+</span> <span class="dv">1</span>))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> ts2</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cell-10" class="cell" data-execution_count="38">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>ts_visualizer([ts1, ts2], <span class="dv">0</span>, <span class="dv">1000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-6" class="cell" data-execution_count="38">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ts_visualizer([ts1, ts2], <span class="dv">0</span>, <span class="dv">1000</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-11-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="01_tsanalysis_files/figure-html/cell-7-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -467,21 +363,21 @@ and mean pairwise nucleotide diversity is 3.521e-04.
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-11-output-3.png" class="img-fluid figure-img"></p>
+<p><img src="01_tsanalysis_files/figure-html/cell-7-output-3.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-11-output-4.png" class="img-fluid figure-img"></p>
+<p><img src="01_tsanalysis_files/figure-html/cell-7-output-4.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-11-output-5.png" class="img-fluid figure-img"></p>
+<p><img src="01_tsanalysis_files/figure-html/cell-7-output-5.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
@@ -489,53 +385,53 @@ and mean pairwise nucleotide diversity is 3.521e-04.
 <pre><code>0</code></pre>
 </div>
 </div>
-<div id="cell-11" class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ts_analyzer(ts_list):</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">pass</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-7" class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ts_analyzer(ts_list):</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">pass</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cell-12" class="cell" data-execution_count="23">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>swept_tree <span class="op">=</span> ts.at(<span class="dv">10_000</span>)  <span class="co"># or you can get e.g. the nth tree using ts.at_index(n)</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>intvl <span class="op">=</span> swept_tree.interval</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Tree number </span><span class="sc">{</span>swept_tree<span class="sc">.</span>index<span class="sc">}</span><span class="ss">, which runs from position </span><span class="sc">{</span>intvl<span class="sc">.</span>left<span class="sc">}</span><span class="ss"> to </span><span class="sc">{</span>intvl<span class="sc">.</span>right<span class="sc">}</span><span class="ss">:"</span>)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw it at a wide size, to make room for all 40 tips</span></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>swept_tree.draw_svg(size<span class="op">=</span>(<span class="dv">1000</span>, <span class="dv">200</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-8" class="cell" data-execution_count="23">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>swept_tree <span class="op">=</span> ts.at(<span class="dv">10_000</span>)  <span class="co"># or you can get e.g. the nth tree using ts.at_index(n)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>intvl <span class="op">=</span> swept_tree.interval</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Tree number </span><span class="sc">{</span>swept_tree<span class="sc">.</span>index<span class="sc">}</span><span class="ss">, which runs from position </span><span class="sc">{</span>intvl<span class="sc">.</span>left<span class="sc">}</span><span class="ss"> to </span><span class="sc">{</span>intvl<span class="sc">.</span>right<span class="sc">}</span><span class="ss">:"</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw it at a wide size, to make room for all 40 tips</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>swept_tree.draw_svg(size<span class="op">=</span>(<span class="dv">1000</span>, <span class="dv">200</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Tree number 1, which runs from position 10000.0 to 10001.0:</code></pre>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="23">
 <div>
 <figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-13-output-2.svg" class="img-fluid figure-img"></p>
+<p><img src="01_tsanalysis_files/figure-html/cell-9-output-2.svg" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
-<div id="cell-13" class="cell" data-execution_count="24">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>reduced_ts <span class="op">=</span> ts.simplify([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>])  <span class="co"># simplify to the first 10 samples</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Genealogy of the first 10 samples for the first 5kb of the genome"</span>)</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>reduced_ts.draw_svg(x_lim<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">5000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-9" class="cell" data-execution_count="24">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>reduced_ts <span class="op">=</span> ts.simplify([<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>])  <span class="co"># simplify to the first 10 samples</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Genealogy of the first 10 samples for the first 5kb of the genome"</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>reduced_ts.draw_svg(x_lim<span class="op">=</span>(<span class="dv">0</span>, <span class="dv">5000</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Genealogy of the first 10 samples for the first 5kb of the genome</code></pre>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="24">
 <div>
 <figure class="figure">
-<p><img src="01_tsanalysis_files/figure-html/cell-14-output-2.svg" class="img-fluid figure-img"></p>
+<p><img src="01_tsanalysis_files/figure-html/cell-10-output-2.svg" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
-<div id="cell-14" class="cell" data-execution_count="28">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> ts.diversity()</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Average diversity per unit sequence length = </span><span class="sc">{</span>d<span class="sc">:.3G}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-10" class="cell" data-execution_count="28">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> ts.diversity()</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Average diversity per unit sequence length = </span><span class="sc">{</span>d<span class="sc">:.3G}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Average diversity per unit sequence length = 0.000345</code></pre>
 </div>
 </div>
-<div id="cell-15" class="cell" data-execution_count="29">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>windows <span class="op">=</span> np.linspace(<span class="dv">0</span>, ts.sequence_length, num<span class="op">=</span><span class="dv">5</span>)</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> ts.diversity(windows<span class="op">=</span>windows)</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(windows, d, sep<span class="op">=</span><span class="st">"</span><span class="ch">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="cell-11" class="cell" data-execution_count="29">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>windows <span class="op">=</span> np.linspace(<span class="dv">0</span>, ts.sequence_length, num<span class="op">=</span><span class="dv">5</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>d <span class="op">=</span> ts.diversity(windows<span class="op">=</span>windows)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(windows, d, sep<span class="op">=</span><span class="st">"</span><span class="ch">\n</span><span class="st">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[    0.  7502. 15004. 22506. 30008.]
 [0.         0.         0.00032951 0.00105048]</code></pre>
