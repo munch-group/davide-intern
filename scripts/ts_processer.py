@@ -46,7 +46,7 @@ def ts_processer(ts_file_path, recapitation=False): ############################
     return ts
 
 import sys # Kasper
-_, slim_tree_file, processed_tree_file = sys.argv # Kasper
+_, slim_tree_file, processed_tree_file, table_file = sys.argv # Kasper
 import re # Kasper
 Mut_rate = float(re.search(r'u_([^_]+)', slim_tree_file).group(1)) # Kasper
 
@@ -55,3 +55,6 @@ print(Mut_rate)
 processed_ts = ts_processer(slim_tree_file) # Kasper
 
 processed_ts.dump(processed_tree_file) # Kasper
+
+table = "" #TODO
+table.dump(table_file, "df", format="table")
