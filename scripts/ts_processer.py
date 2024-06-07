@@ -1,14 +1,11 @@
 #!/home/davidec/miniconda3/envs/birc-project/bin/python
 import msprime, tskit, pyslim
 import numpy as np
+import pandas as pd
+import os
+import sys # Kasper
+import re # Kasper
 
-
-# with open("params.txt") as f: 
-#     for line in f:
-#         param = line.strip().split(" ")
-#         if "MUT_RATE_AMP" in param[1]:
-#             Mut_rate = float(param[1].split("=")[1])
-#             break
 
 def ts_processer(ts_file_path, recapitation=False): ################################# numinds
     orig_ts = tskit.load(ts_file_path)
@@ -45,9 +42,27 @@ def ts_processer(ts_file_path, recapitation=False): ############################
 
     return ts
 
-import sys # Kasper
 _, slim_tree_file, processed_tree_file, table_file = sys.argv # Kasper
-import re # Kasper
+
+params = [c for c in slim_tree_file.split("/")[-1].split("_")[:-1] if c != ""] #getting params from file name
+print(params)
+params_dict = dict(zip(params[::2], map(float, params[1::2])))
+
+def ts_to_df(ts):
+    windows = list(ts.breakpoints())
+    diversity = ts.diversity(windows=windows)
+    branch_length = [tree.total_branch_length for tree in ts.trees()]
+    tajimas_D = ts.Tajimas_D(windows=windows)
+    df = pd.DataFrame({
+        'Position': windows[:-1],
+        'Diversity': diversity,
+        'Branch Length': branch_length,
+        'Tajima\'s D': tajimas_D,
+        **params_dict
+}, index=[i + 1 for i in range(len(ts.trees()))])
+    return df 
+
+
 Mut_rate = float(re.search(r'u_([^_]+)', slim_tree_file).group(1)) # Kasper
 
 print(Mut_rate)
@@ -56,5 +71,6 @@ processed_ts = ts_processer(slim_tree_file) # Kasper
 
 processed_ts.dump(processed_tree_file) # Kasper
 
-table = "" #TODO
-table.dump(table_file, "df", format="table")
+table = ts_to_df(processed_ts)
+
+table.to_hdf(table_file, key="df", format="table")

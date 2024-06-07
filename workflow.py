@@ -7,16 +7,16 @@ slim_model_file = 'scripts/davides_drive_model.slim'
 slim_output_dir = 'steps/slim_tree_seqs/'
 processed_output_dir = 'steps/processed_tree_seqs/'
 
-N = 100
-u = 5e-6
-A = 3
-g = 6000
+N = 1000 #Population size
+u = 5e-6 #mutation rate
+A = 3 #number of amplicons
+g = 5000 #10 * N 
 rec_rates = [0, 5e-6, 5e-8, 5e-10]
-vanriances = [2, 20, 200]
+variances = [2, 20, 200]
 
-for i in range(10):
+for i in range(5):
     for r in rec_rates:
-        for v in vanriances:
+        for v in variances:
 
             label = f'A_{A}__N_{N}__u_{u:.10f}__r_{r:.10f}__S_{v}_{i}'
 
@@ -35,9 +35,7 @@ for i in range(10):
             processed_trees_file = processed_output_dir + label + '.trees'
             table_file = processed_output_dir + label + '.h5'
 
-            gwf.target('trees_'+label, inputs=[slim_tree_file], outputs=[processed_trees_file]) << f"""
-
-            mkdir -p {processed_output_dir}
-            python scripts/ts_processer.py {slim_tree_file} {processed_trees_file} {table_file}
-
+            gwf.target('trees_'+label, inputs=[slim_tree_file], outputs=[processed_trees_file], memory = '16gb') << f"""
+            mkdir -p {processed_output_dir} 
+            python scripts/ts_processer.py {slim_tree_file} {processed_trees_file} {table_file} 
             """
