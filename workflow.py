@@ -35,7 +35,7 @@ for i in range(5):
             processed_trees_file = processed_output_dir + label + '.trees'
             table_file = processed_output_dir + label + '.h5'
 
-            gwf.target('trees_'+label, inputs=[slim_tree_file], outputs=[processed_trees_file], memory = '16gb') << f"""
+            gwf.target('trees_'+label, inputs=[slim_tree_file], outputs=[processed_trees_file], memory = '100gb') << f"""
             mkdir -p {processed_output_dir} 
             python scripts/ts_processer.py {slim_tree_file} {processed_trees_file} {table_file} 
             """

@@ -63,8 +63,8 @@ def ts_to_df(ts):
     return df 
 
 
-Mut_rate = float(re.search(r'u_([^_]+)', slim_tree_file).group(1)) # Kasper
-
+#Mut_rate = float(re.search(r'u_([^_]+)', slim_tree_file).group(1)) # Kasper
+Mut_rate = 1e-8
 print(Mut_rate)
 
 processed_ts = ts_processer(slim_tree_file) # Kasper
