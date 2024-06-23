@@ -33,8 +33,10 @@ def ts_processer(ts_file_path, recapitation=False): ############################
     ts = msprime.sim_mutations(
             sts,
             rate=Mut_rate,
-            model=msprime.SLiMMutationModel(type=0, next_id=next_id), #using mutation type 0 because its not used in SLiM 
-            keep=True, #keeps other mut types 
+            # model=msprime.SLiMMutationModel(type=0, next_id=next_id), #using mutation type 0 because its not used in SLiM 
+            model=msprime.SLiMMutationModel(type=1, next_id=next_id), #using mutation type 0 because its not used in SLiM 
+            # keep=True, #keeps other mut types 
+            keep=False, #keeps other mut types 
     )
 
     print(f"ADDING NEUTRAL MUTATIONS:\nThe tree sequence now has {ts.num_mutations} mutations,\n"
@@ -42,25 +44,43 @@ def ts_processer(ts_file_path, recapitation=False): ############################
 
     return ts
 
-_, slim_tree_file, processed_tree_file, table_file = sys.argv # Kasper
+_, slim_tree_file, processed_tree_file, windows_table_file, trees_table_file = sys.argv # Kasper
 
 params = [c for c in slim_tree_file.split("/")[-1].split("_")[:-1] if c != ""] #getting params from file name
 print(params)
 params_dict = dict(zip(params[::2], map(float, params[1::2])))
 
+<<<<<<< Updated upstream
 def ts_to_df(ts):
 #Function that returns dataframe from input tree sequence
     windows = list(ts.breakpoints())
     diversity = ts.diversity(windows=windows)
     branch_length = [tree.total_branch_length for tree in ts.trees()]
     tajimas_D = ts.Tajimas_D(windows=windows)
+=======
+def ts_to_window_stats_df(ts):
+    L = int(ts.sequence_length)
+    windows = np.linspace(0, L, num=L//100_000)
+>>>>>>> Stashed changes
     df = pd.DataFrame({
-        'Position': windows[:-1],
-        'Diversity': diversity,
-        'Branch Length': branch_length,
-        'Tajima\'s D': tajimas_D,
+        'pos': [(x+y) // 2  for x,y in zip(windows[:-1], windows[1:])],
+        'start': windows[:-1],
+        'end': windows[1:],
+        'pi': ts.diversity(windows=windows),
+        'tajimas_d': ts.Tajimas_D(windows=windows),
         **params_dict
-}, index=[i + 1 for i in range(len(ts.trees()))])
+    })   
+    return df 
+
+def ts_to_tree_stats_df(ts):
+    breakpoints = list(ts.breakpoints())
+    df = pd.DataFrame({
+        'pos': [(x+y) // 2  for x,y in zip(breakpoints[:-1], breakpoints[1:])],
+        'start': breakpoints[:-1],
+        'end': breakpoints[1:],        
+        'branch_length': [tree.total_branch_length for tree in ts.trees()],
+        **params_dict
+    })   
     return df 
 
 
@@ -70,8 +90,10 @@ processed_ts = ts_processer(slim_tree_file)
 #Writing processed tree sequence file
 processed_ts.dump(processed_tree_file) 
 
-#Conversion to a dataframe 
-table = ts_to_df(processed_ts)
+table = ts_to_window_stats_df(processed_ts)
 
-#Writing dataframe as hdf (h5) file
-table.to_hdf(table_file, key="df", format="table")
+table.to_hdf(windows_table_file, key="df", format="table")
+
+table = ts_to_tree_stats_df(processed_ts)
+
+table.to_hdf(trees_table_file, key="df", format="table")
