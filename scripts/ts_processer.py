@@ -50,18 +50,9 @@ params = [c for c in slim_tree_file.split("/")[-1].split("_")[:-1] if c != ""] #
 print(params)
 params_dict = dict(zip(params[::2], map(float, params[1::2])))
 
-<<<<<<< Updated upstream
-def ts_to_df(ts):
-#Function that returns dataframe from input tree sequence
-    windows = list(ts.breakpoints())
-    diversity = ts.diversity(windows=windows)
-    branch_length = [tree.total_branch_length for tree in ts.trees()]
-    tajimas_D = ts.Tajimas_D(windows=windows)
-=======
 def ts_to_window_stats_df(ts):
     L = int(ts.sequence_length)
     windows = np.linspace(0, L, num=L//100_000)
->>>>>>> Stashed changes
     df = pd.DataFrame({
         'pos': [(x+y) // 2  for x,y in zip(windows[:-1], windows[1:])],
         'start': windows[:-1],
