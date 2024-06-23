@@ -2,12 +2,13 @@
 import msprime, tskit, pyslim
 import numpy as np
 import pandas as pd
-import os
-import sys # Kasper
-import re # Kasper
+import sys 
 
+
+Mut_rate = 1e-8 #Mut rate used for adding neutral mutations
 
 def ts_processer(ts_file_path, recapitation=False): ################################# numinds
+#Function to perform simplification and adding neutral mutations
     orig_ts = tskit.load(ts_file_path)
     if recapitation == False:
         rts = orig_ts
@@ -16,7 +17,7 @@ def ts_processer(ts_file_path, recapitation=False): ############################
     #Simplification: discarding less informing nodes from tree
     rng = np.random.default_rng(seed=3)
     alive_inds = pyslim.individuals_alive_at(rts, 0)
-    keep_indivs = rng.choice(alive_inds, 100, replace=False) #################################
+    keep_indivs = rng.choice(alive_inds, 100, replace=False) 
     keep_nodes = []
     for i in keep_indivs:
         keep_nodes.extend(rts.individual(i).nodes)
@@ -28,7 +29,6 @@ def ts_processer(ts_file_path, recapitation=False): ############################
         f"(and {sts.num_individuals} individuals).\n--------------------------\n")
     
     #Adding neutral mutation types after the simulation has occured
-    #ACTUALLY WE HAVE ONLY NEUTRAL MUTATION TYPES IN OUR SIMULATION <====== DAVIDE
     next_id = pyslim.next_slim_mutation_id(sts)
     ts = msprime.sim_mutations(
             sts,
@@ -49,6 +49,7 @@ print(params)
 params_dict = dict(zip(params[::2], map(float, params[1::2])))
 
 def ts_to_df(ts):
+#Function that returns dataframe from input tree sequence
     windows = list(ts.breakpoints())
     diversity = ts.diversity(windows=windows)
     branch_length = [tree.total_branch_length for tree in ts.trees()]
@@ -63,14 +64,14 @@ def ts_to_df(ts):
     return df 
 
 
-#Mut_rate = float(re.search(r'u_([^_]+)', slim_tree_file).group(1)) # Kasper
-Mut_rate = 1e-8
-print(Mut_rate)
+#Calling function to tree sequence file
+processed_ts = ts_processer(slim_tree_file) 
 
-processed_ts = ts_processer(slim_tree_file) # Kasper
+#Writing processed tree sequence file
+processed_ts.dump(processed_tree_file) 
 
-processed_ts.dump(processed_tree_file) # Kasper
-
+#Conversion to a dataframe 
 table = ts_to_df(processed_ts)
 
+#Writing dataframe as hdf (h5) file
 table.to_hdf(table_file, key="df", format="table")
