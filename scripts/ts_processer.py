@@ -57,8 +57,8 @@ def ts_to_window_stats_df(ts):
         'pos': [(x+y) // 2  for x,y in zip(windows[:-1], windows[1:])],
         'start': windows[:-1],
         'end': windows[1:],
-        'pi': ts.diversity(windows=windows),
-        'tajimas_d': ts.Tajimas_D(windows=windows),
+        'pi': ts.diversity(windows=windows, mode="branch"),
+        'tajimas_d': ts.Tajimas_D(windows=windows, mode="branch"),
         **params_dict
     })   
     return df 
