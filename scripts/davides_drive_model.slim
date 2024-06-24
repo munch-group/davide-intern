@@ -7,22 +7,22 @@ initialize()
 	initializeTreeSeq();
 	
 	// global constants
-	defineConstant("MUT_RATE", 2.5e-7);
-	//defineConstant("MUT_RATE_AMP");
-	//defineConstant("REC_RATE");
+	defineConstant("MUT_RATE", 0); 
+	// defineConstant("MUT_RATE_AMP", 0);
+	// defineConstant("REC_RATE", 5e-8);
 	defineConstant("D_PROPORTION", 0.8);
 	defineConstant("CHR_LEN", 1000);
 	defineConstant("AMPLICON_LEN", 1000);
 	defineConstant("SEX_CHR_SEGMENT_LEN", 1e7);
 	defineConstant("SEP_LEN", 2);
-	//defineConstant("VARIANCE_SEED");
-	//defineConstant("POPULATION_SIZE");
+	// defineConstant("VARIANCE_SEED", 20);
+	// defineConstant("POPULATION_SIZE", 1000);
 	defineConstant("K", POPULATION_SIZE);
 	defineConstant("SAMPLE_INTERVAL", 0);
-	defineConstant("PRINT_TEST_INTERVAL", 1000);	
-//	defineConstant("NR_AMPLICONS", 3);
-//	defineConstant("DRIVE_S", 1); 
-//	defineConstant("SPERMATOGENIC_FAILURE_S", 2); 
+	defineConstant("PRINT_TEST_INTERVAL", 1000);
+	// defineConstant("NR_AMPLICONS", 3);
+	//	defineConstant("DRIVE_S", 1); 
+	//	defineConstant("SPERMATOGENIC_FAILURE_S", 2); 
 	
 	// ends of genomic segments
 	ends = c(
@@ -30,22 +30,22 @@ initialize()
 		(CHR_LEN +     SEP_LEN) - 1,      // sep
 		(CHR_LEN * 2 + SEP_LEN) - 1,      // autosome
 		(CHR_LEN * 2 + SEP_LEN * 2) - 1   // sep    
-	);
-
+		);
+	
 	for (i in 1:NR_AMPLICONS) {
 		ends = c(ends, (CHR_LEN * 2 + SEP_LEN * 2 + AMPLICON_LEN * i + SEX_CHR_SEGMENT_LEN * (i-1)) - 1);     // amplicon 2
 		ends = c(ends, (CHR_LEN * 2 + SEP_LEN * 2 + AMPLICON_LEN * i + SEX_CHR_SEGMENT_LEN * i) - 1); // sex chrom segment
-	}		
+	}
 	defineConstant("ENDS", ends);
 	
 	// position of m3 mutation
-	defineConstant("m3_pos", ENDS[size(ENDS)-1]); 
-
+	defineConstant("m3_pos", ENDS[size(ENDS)-1]);
+	
 	// mutation rates
 	mut_rates = c(0, 0, 0, 0); // autosomes and seperators
-	for (i in 1:NR_AMPLICONS) 	
-		mut_rates = c(mut_rates, MUT_RATE_AMP, 0); 
-	initializeMutationRate(mut_rates, ENDS);		
+	for (i in 1:NR_AMPLICONS)
+		mut_rates = c(mut_rates, MUT_RATE_AMP, 0);
+	initializeMutationRate(mut_rates, ENDS);
 	
 	// mutation types
 	initializeMutationType("m1", 0.5, "f", 0.0); // PAR 
@@ -68,7 +68,7 @@ initialize()
 	initializeGenomicElement(g4, ENDS[0] + 1, ENDS[1]);   // sep
 	initializeGenomicElement(g1, ENDS[1] + 1, ENDS[2]);   // autosome
 	initializeGenomicElement(g4, ENDS[2] + 1, ENDS[3]);   // sep
-	for (i in 0:(NR_AMPLICONS-1) ) {		
+	for (i in 0:(NR_AMPLICONS-1) ) {
 		initializeGenomicElement(g3, ENDS[3+2*i]+1, ENDS[4+2*i]);   // amplicon
 		initializeGenomicElement(g2, ENDS[4+2*i]+1, ENDS[5+2*i]);   // sex chrom segment
 	}
@@ -78,16 +78,16 @@ initialize()
 	
 	// recombination rates in males
 	rec_rates = c(REC_RATE, 0.5, REC_RATE, 0.5); // autosomes and seperators
-	for (i in 0:(NR_AMPLICONS-1) ) 	
+	for (i in 0:(NR_AMPLICONS-1) )
 		rec_rates = c(rec_rates, 0, 0); // all rec rates zero on Y
 	initializeRecombinationRate(rec_rates, ENDS, sex="M");
 	
 	// recombination rates in males
 	rec_rates = c(REC_RATE, 0.5, REC_RATE, 0.5);
-	for (i in 0:(NR_AMPLICONS-1) ) 	
+	for (i in 0:(NR_AMPLICONS-1) )
 		rec_rates = c(rec_rates, 0, REC_RATE); // zero rec rate in ampliconic and non-zero otherwse
 	initializeRecombinationRate(rec_rates, ENDS, sex="F");
-
+	
 	if (exists("slimgui")) {
 		// find Rscript for ploting
 		if (fileExists("/usr/bin/Rscript"))
@@ -97,11 +97,59 @@ initialize()
 		else
 			stop("Couldn't find Rscript.");
 	}
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////
+	// defineConstant("SWEEP_START", 20); // -d  "SWEEP_START={generations-sweepage}"
+	// defineConstant("SEL_COEF", 0.1);   // -d  "SEL_COEF=0.1"
+	// defineConstant("SWEEP_POS", 15e6); // -d  "SWEEP_POS=15e6"
+	// defineConstant("TMPDIR", "/tmp");  // -d  "TMPDIR=/scratch/$GWF_JOBID"  
+	
+	initializeMutationType("m8", 1.0, "f", SEL_COEF);
+	defineConstant("simID", getSeed());
+
 }
+
+SWEEP_START late() {
+	if (SEL_COEF > 0) {
+		
+		sim.treeSeqOutput(TMPDIR + "/slim_" + simID + ".trees");
+		
+		girls = sample(p1.individuals[(p1.individuals.sex == "F") & (p1.individuals.age == 0)], 1);
+		target = sample(girls.genome1, 1);
+		while (target.isNullGenome)
+		{
+			target = sample(p1.genomes, 1);
+		}
+		target.addNewDrawnMutation(m8, SWEEP_POS);
+	}
+}
+SWEEP_START: late() {
+	if (SEL_COEF > 0) {
+		if (sim.countOfMutationsOfType(m8) == 0) {
+			if (sim.countOfMutationsOfType(m8) + sim.countOfMutationsOfType(m3) == p1.individualCount * 2) {
+				cat(simID + ": FIXED ish\n");
+				sim.deregisterScriptBlock(self);
+			} else {
+				cat(simID + ": LOST - RESTARTING\n");
+				sim.readFromPopulationFile(TMPDIR + "/slim_" + simID + ".trees");
+				setSeed(rdunif(1, 0, asInteger(2^62) - 1));
+				
+				girls = sample(p1.individuals[(p1.individuals.sex == "F") & (p1.individuals.age == 0)], 1);
+				target = sample(girls.genome1, 1);
+				while (target.isNullGenome)
+				{
+					target = sample(p1.genomes, 1);
+				}
+				target.addNewDrawnMutation(m8, SWEEP_POS);
+			}
+		}
+	}
+}
+//////////////////////////////////////////////////////////
 
 // need to make our own random number generatator that can be seeded without interferring with slims seed
 function (f)seeded_pseudo_random(i seed) {
-// TODO: test it is uniformly distr.
+	// TODO: test it is uniformly distr.
 	digits = 6;
 	n = 111111;
 	for (i in 1:(10+seed)) {
@@ -120,13 +168,13 @@ function (f)seeded_gaussian(i u, i s, i seed) {
 
 function (f)amplicon_meiotic_drive(i this_num, i other_num) {
 	// seed specific to this_num other_num pair
-	seed = this_num + other_num*other_num;	
-
+	seed = this_num + other_num*other_num;
+	
 	// seeded random value drawn from normal distribution
 	random_interaction_effect = seeded_gaussian(0, 20, seed);
-
+	
 	// drive strength of this against other
-//	drive_strength = abs(xamp_num + random_interaction_effect);
+	//	drive_strength = abs(xamp_num + random_interaction_effect);
 	drive_strength = abs(random_interaction_effect);
 	return drive_strength;
 }
@@ -153,7 +201,7 @@ function (f)amplicon_x_drive(o<Subpopulation> p, o <Individual> Ind, i start, i 
 	// compute drive of x and y amplicons
 	x_drive = amplicon_meiotic_drive(x_n, y_n);
 	y_drive = amplicon_meiotic_drive(y_n, x_n);
-		
+	
 	// return drive of x amplicon against y amplicon
 	denom = x_drive + y_drive;
 	if (denom == 0) {
@@ -165,9 +213,9 @@ function (f)amplicon_x_drive(o<Subpopulation> p, o <Individual> Ind, i start, i 
 // returns the probability that a randomly drawn parental gamete  
 function (f)parental_sperm_x_proportion (o <Individual> Ind) {
 	amplicon_x_drives = c();
-	for (i in 0:(NR_AMPLICONS-1) )	
+	for (i in 0:(NR_AMPLICONS-1) )
 		amplicon_x_drives = c(amplicon_x_drives, amplicon_x_drive(p1, Ind, ENDS[3+2*i]+1, ENDS[4+2*i]));
-
+	
 	return mean(amplicon_x_drives);
 }
 
@@ -188,18 +236,18 @@ reproduction() {
 	i[i.sex == "M"].genome2.addNewMutation(m3, 0.0, m3_pos);
 	
 	// logging
-	log = community.createLogFile("data/sim_log.txt", logInterval=10);
+	log = community.createLogFile("sim_log.txt", logInterval=10);
 	log.addCycle();
 	log.addPopulationSexRatio();
 	log.addPopulationSize();
 	
-	if (SAMPLE_INTERVAL == 0) 
-	return;
+	if (SAMPLE_INTERVAL == 0)
+		return;
 	
 	
 	// prepare plotting
-	sim.setValue("sexratio", NULL);	
-		
+	sim.setValue("sexratio", NULL);
+	
 	for (i in 1:10) { // maximum 10 amplicons
 		sim.setValue(format("X_AMP%d_M6", i), Dictionary());
 		sim.setValue(format("Y_AMP%d_M7", i), Dictionary());
@@ -212,9 +260,9 @@ reproduction() {
 
 // live plotting
 1: early() {
-
+	
 	if (sim.cycle % PRINT_TEST_INTERVAL == 0) print(sim.cycle);
-	if (SAMPLE_INTERVAL == 0) 
+	if (SAMPLE_INTERVAL == 0)
 		return;
 	// update vector of stats
 	if (sim.cycle % SAMPLE_INTERVAL == 0) {
@@ -223,7 +271,7 @@ reproduction() {
 		
 		// sex ratio
 		ratio = size(males) / p1.individualCount;
-		sim.setValue("sexratio", c(sim.getValue("sexratio"), ratio));		
+		sim.setValue("sexratio", c(sim.getValue("sexratio"), ratio));
 		
 		// count m6 mutations on the X chromosomes
 		mut = sim.mutationsOfType(m6);
@@ -259,13 +307,13 @@ reproduction() {
 							key = format("Y_AMP%d_M7", j);
 							break;
 						}
-					}				
+					}
 					d = sim.getValue(key);
 					d.setValue(pos, c(d.getValue(pos), c(sim.cycle, freq)));
 					sim.setValue(key, d);
 				}
 			}
-		}
+		}	
 	}
 	if (sim.cycle % SAMPLE_INTERVAL != 0) {
 		// just skip to return otherwise
@@ -273,35 +321,35 @@ reproduction() {
 	}
 	// format and run R code for plot
 	sexratio = sim.getValue("sexratio");
-
+	
 	X_AMP_M6_data = c(
-	sim.getValue("X_AMP1_M6"),
-	sim.getValue("X_AMP2_M6"),
-	sim.getValue("X_AMP3_M6"),
-	sim.getValue("X_AMP4_M6"),
-	sim.getValue("X_AMP5_M6"),
-	sim.getValue("X_AMP6_M6"),
-	sim.getValue("X_AMP7_M6"),
-	sim.getValue("X_AMP8_M6"),
-	sim.getValue("X_AMP9_M6"),
-	sim.getValue("X_AMP10_M6")
-	);
-
+		sim.getValue("X_AMP1_M6"),
+		sim.getValue("X_AMP2_M6"),
+		sim.getValue("X_AMP3_M6"),
+		sim.getValue("X_AMP4_M6"),
+		sim.getValue("X_AMP5_M6"),
+		sim.getValue("X_AMP6_M6"),
+		sim.getValue("X_AMP7_M6"),
+		sim.getValue("X_AMP8_M6"),
+		sim.getValue("X_AMP9_M6"),
+		sim.getValue("X_AMP10_M6")
+		);
+	
 	Y_AMP_M7_data = c(
-	sim.getValue("Y_AMP1_M7"),
-	sim.getValue("Y_AMP2_M7"),
-	sim.getValue("Y_AMP3_M7"),
-	sim.getValue("Y_AMP4_M7"),
-	sim.getValue("Y_AMP5_M7"),
-	sim.getValue("Y_AMP6_M7"),
-	sim.getValue("Y_AMP7_M7"),
-	sim.getValue("Y_AMP8_M7"),
-	sim.getValue("Y_AMP9_M7"),
-	sim.getValue("Y_AMP10_M7")
-	);
-
+		sim.getValue("Y_AMP1_M7"),
+		sim.getValue("Y_AMP2_M7"),
+		sim.getValue("Y_AMP3_M7"),
+		sim.getValue("Y_AMP4_M7"),
+		sim.getValue("Y_AMP5_M7"),
+		sim.getValue("Y_AMP6_M7"),
+		sim.getValue("Y_AMP7_M7"),
+		sim.getValue("Y_AMP8_M7"),
+		sim.getValue("Y_AMP9_M7"),
+		sim.getValue("Y_AMP10_M7")
+		);
+		
 	line_colors = c("red", "green3", "blue", "cyan3", "magenta", "gold", "purple", "gray", "black", "yellow");
-
+	
 	x_mut_lines_code = c();
 	for (i in 0:(NR_AMPLICONS-1)) {
 		x_mut_lines_code = c(x_mut_lines_code, 'lapply(' + "list("+paste(sapply(X_AMP_M6_data[i].allKeys, '"c("+paste(X_AMP_M6_data[i].getValue(applyValue), sep=", ")+")";'), sep=", ")+")" + ', function(x) lines(matrix(x, ncol=2, byrow=TRUE),  col="'+line_colors[i]+'"))');
